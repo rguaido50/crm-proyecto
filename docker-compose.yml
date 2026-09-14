@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: crm
       POSTGRES_PASSWORD: crm
@@ -11,7 +11,7 @@ services:
       - crm_db_data:/var/lib/postgresql/data
 
   db-test:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: crm
       POSTGRES_PASSWORD: crm
