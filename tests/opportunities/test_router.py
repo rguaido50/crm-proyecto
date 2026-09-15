@@ -14,9 +14,7 @@ async def test_create_opportunity_returns_201_with_the_created_row(client: Async
 
 
 async def test_create_opportunity_rejects_a_missing_contact_id(client: AsyncClient) -> None:
-    response = await client.post(
-        "/api/opportunities", json={"title": "Deal", "owner": "Sam"}
-    )
+    response = await client.post("/api/opportunities", json={"title": "Deal", "owner": "Sam"})
 
     assert response.status_code == 422
 
