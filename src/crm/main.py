@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from crm.contacts.router import router as contacts_api_router
 from crm.contacts.views import router as contacts_views_router
 from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
+from crm.opportunities.router import router as opportunities_api_router
 
 BASE_DIR = Path(__file__).parent
 
@@ -15,6 +16,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 app.include_router(contacts_api_router)
 app.include_router(contacts_views_router)
+app.include_router(opportunities_api_router)
 
 
 def _domain_error_response(request: Request, status_code: int, detail: str) -> Response:
