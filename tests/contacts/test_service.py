@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts import service
 from crm.contacts.schemas import ContactCreate, ContactUpdate
+from crm.opportunities import service as opportunities_service
+from crm.opportunities.models import OpportunityStatus
+from crm.opportunities.schemas import OpportunityCreate, OpportunityUpdate
 
 
 async def test_create_contact_persists_the_given_fields(session: AsyncSession) -> None:
@@ -41,6 +44,25 @@ async def test_list_contacts_returns_every_contact(session: AsyncSession) -> Non
     assert names == {"Ada Lovelace", "Grace Hopper"}
 
 
+async def test_list_contacts_returns_the_correct_open_opportunity_count(
+    session: AsyncSession,
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Open deal", owner="Sam")
+    )
+    closed_deal = await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Closed deal", owner="Sam")
+    )
+    await opportunities_service.update_opportunity(
+        session, closed_deal.id, OpportunityUpdate(status=OpportunityStatus.WON)
+    )
+
+    contacts = await service.list_contacts(session)
+
+    assert contacts[0].open_opportunities_count == 1
+
+
 async def test_update_contact_changes_only_the_given_fields(session: AsyncSession) -> None:
     created = await service.create_contact(
         session, ContactCreate(name="Ada Lovelace", company="Acme")
@@ -59,3 +81,15 @@ async def test_delete_contact_removes_it(session: AsyncSession) -> None:
 
     with pytest.raises(service.ContactNotFoundError):
         await service.get_contact(session, created.id)
+
+
+async def test_delete_contact_is_refused_when_it_has_opportunities(
+    session: AsyncSession,
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    with pytest.raises(service.ContactHasDependentsError):
+        await service.delete_contact(session, contact.id)

@@ -1,10 +1,16 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
+from crm.core.validation import require_non_blank
+
+# Opportunity belongs to Contact (FK); this reverse import is deliberate — list_contacts
+# needs the open-Opportunity count per #12's ticket, and there's no repository layer to
+# put it behind (see CLAUDE.md). Contacts is otherwise a leaf module.
+from crm.opportunities.models import Opportunity, OpportunityStatus
 
 
 class ContactNotFoundError(NotFoundError):
@@ -23,8 +29,10 @@ def _normalize(data: dict[str, str | None]) -> dict[str, str | None]:
     normalized: dict[str, str | None] = {}
     for field, value in data.items():
         normalized[field] = (value.strip() or None) if value is not None else None
-    if "name" in normalized and not normalized["name"]:
-        raise ContactValidationError("name cannot be empty")
+    if "name" in normalized:
+        normalized["name"] = require_non_blank(
+            normalized["name"] or "", "name", ContactValidationError
+        )
     return normalized
 
 
@@ -44,8 +52,24 @@ async def get_contact(session: AsyncSession, contact_id: int) -> Contact:
 
 
 async def list_contacts(session: AsyncSession) -> list[Contact]:
-    result = await session.execute(select(Contact).order_by(Contact.name))
-    return list(result.scalars().all())
+    open_opportunities_count = (
+        select(func.count(Opportunity.id))
+        .where(
+            Opportunity.contact_id == Contact.id,
+            Opportunity.status == OpportunityStatus.OPEN,
+        )
+        .correlate(Contact)
+        .scalar_subquery()
+    )
+    result = await session.execute(select(Contact, open_opportunities_count).order_by(Contact.name))
+    contacts = []
+    for contact, count in result.all():
+        # Not a mapped column — a transient attribute for list.html only, set fresh on
+        # every call. Don't read it off a Contact fetched any other way (get_contact,
+        # update_contact): it won't be there.
+        contact.open_opportunities_count = count  # type: ignore[attr-defined]
+        contacts.append(contact)
+    return contacts
 
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:

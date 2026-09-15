@@ -39,6 +39,7 @@
     <tr>
       <th>Name</th>
       <th>Company</th>
+      <th>Open Opportunities</th>
     </tr>
   </thead>
   <tbody>
@@ -46,6 +47,7 @@
     <tr>
       <td><a href="/contacts/{{ contact.id }}">{{ contact.name }}</a></td>
       <td>{{ contact.company or "" }}</td>
+      <td>{{ contact.open_opportunities_count }}</td>
     </tr>
     {% endfor %}
   </tbody>

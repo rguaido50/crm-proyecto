@@ -9,6 +9,7 @@ from alembic import context
 from crm.contacts import models as contacts_models  # noqa: F401
 from crm.core.config import settings
 from crm.core.db import Base
+from crm.opportunities import models as opportunities_models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

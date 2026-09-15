@@ -6,6 +6,7 @@ from crm.contacts import service
 from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.db import get_session
 from crm.core.templates import templates
+from crm.opportunities import service as opportunities_service
 
 router = APIRouter(tags=["contacts-views"])
 
@@ -20,10 +21,18 @@ async def list_contacts_page(
 
 @router.get("/contacts/{contact_id}", response_class=HTMLResponse)
 async def contact_detail_page(
-    contact_id: int, request: Request, session: AsyncSession = Depends(get_session)
+    contact_id: int,
+    request: Request,
+    error: str | None = None,
+    session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     contact = await service.get_contact(session, contact_id)
-    return templates.TemplateResponse(request, "detail.html", {"contact": contact})
+    opportunities = await opportunities_service.list_for_contact(session, contact_id)
+    return templates.TemplateResponse(
+        request,
+        "detail.html",
+        {"contact": contact, "opportunities": opportunities, "error": error},
+    )
 
 
 @router.post("/contacts", response_class=RedirectResponse)

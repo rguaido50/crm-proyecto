@@ -3,6 +3,9 @@
 {% block title %}{{ contact.name }}{% endblock %}
 
 {% block content %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1>{{ contact.name }}</h1>
@@ -55,8 +58,33 @@
 </section>
 
 <section class="mb-4">
-  <h2 class="h5">Opportunities</h2>
-  <p class="text-muted">No opportunities yet.</p>
+  <div class="d-flex justify-content-between align-items-center">
+    <h2 class="h5">Opportunities</h2>
+    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-opportunity-form">
+      + New Opportunity
+    </button>
+  </div>
+  <form id="new-opportunity-form" class="collapse card card-body mb-3" method="post" action="/opportunities">
+    <input type="hidden" name="contact_id" value="{{ contact.id }}">
+    <div class="mb-2">
+      <label class="form-label" for="opp-title">Title</label>
+      <input class="form-control" type="text" id="opp-title" name="title" required>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="opp-value">Value (USD)</label>
+      <input class="form-control" type="number" step="0.01" id="opp-value" name="value_usd">
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="opp-owner">Owner</label>
+      <input class="form-control" type="text" id="opp-owner" name="owner" required>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="opp-close-date">Expected close date</label>
+      <input class="form-control" type="date" id="opp-close-date" name="expected_close_date">
+    </div>
+    <button class="btn btn-primary" type="submit">Create Opportunity</button>
+  </form>
+  {% include "_table.html" %}
 </section>
 
 <section class="mb-4">
