@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts.models import Contact
@@ -21,3 +22,8 @@ async def get_contact(session: AsyncSession, contact_id: int) -> Contact:
     if contact is None:
         raise ContactNotFoundError(contact_id)
     return contact
+
+
+async def list_contacts(session: AsyncSession) -> list[Contact]:
+    result = await session.execute(select(Contact).order_by(Contact.name))
+    return list(result.scalars().all())
