@@ -16,8 +16,18 @@ class OpportunityValidationError(ValidationError):
     pass
 
 
+def _require_non_blank(field: str, value: str) -> str:
+    stripped = value.strip()
+    if not stripped:
+        raise OpportunityValidationError(f"{field} cannot be empty")
+    return stripped
+
+
 async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> Opportunity:
-    opportunity = Opportunity(**data.model_dump())
+    fields = data.model_dump()
+    fields["title"] = _require_non_blank("title", fields["title"])
+    fields["owner"] = _require_non_blank("owner", fields["owner"])
+    opportunity = Opportunity(**fields)
     session.add(opportunity)
     try:
         await session.commit()
@@ -64,13 +74,18 @@ async def update_opportunity(
 ) -> Opportunity:
     opportunity = await get_opportunity(session, opportunity_id)
     updates = data.model_dump(exclude_unset=True)
+    if "title" in updates:
+        updates["title"] = _require_non_blank("title", updates["title"])
+    if "owner" in updates:
+        updates["owner"] = _require_non_blank("owner", updates["owner"])
+
     new_status = updates.get("status")
-    if (
-        new_status is not None
-        and new_status != OpportunityStatus.OPEN
-        and opportunity.status == OpportunityStatus.OPEN
-    ):
-        opportunity.closed_at = func.now()
+    if new_status is not None and new_status != opportunity.status:
+        if new_status == OpportunityStatus.OPEN:
+            opportunity.closed_at = None
+        elif opportunity.status == OpportunityStatus.OPEN:
+            opportunity.closed_at = func.now()
+
     for field, value in updates.items():
         setattr(opportunity, field, value)
     await session.commit()

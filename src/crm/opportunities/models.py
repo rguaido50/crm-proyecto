@@ -27,7 +27,9 @@ class Opportunity(Base):
     __tablename__ = "opportunities"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    contact_id: Mapped[int] = mapped_column(ForeignKey("contacts.id", ondelete="RESTRICT"))
+    contact_id: Mapped[int] = mapped_column(
+        ForeignKey("contacts.id", ondelete="RESTRICT"), index=True
+    )
     title: Mapped[str]
     value_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     stage: Mapped[OpportunityStage] = mapped_column(
