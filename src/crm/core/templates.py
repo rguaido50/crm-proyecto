@@ -8,5 +8,6 @@ templates = Jinja2Templates(
     directory=[
         CRM_DIR / "templates",
         CRM_DIR / "contacts" / "templates",
+        CRM_DIR / "opportunities" / "templates",
     ]
 )
