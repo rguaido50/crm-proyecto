@@ -168,7 +168,7 @@ async def test_create_opportunity_rejects_a_value_usd_that_overflows_the_column(
                 contact_id=contact.id,
                 title="Deal",
                 owner="Sam",
-                value_usd=Decimal("99999999999999"),
+                value_usd=Decimal(99999999999999),
             ),
         )
 
@@ -183,5 +183,5 @@ async def test_update_opportunity_rejects_a_value_usd_that_overflows_the_column(
 
     with pytest.raises(service.OpportunityValidationError):
         await service.update_opportunity(
-            session, opportunity.id, OpportunityUpdate(value_usd=Decimal("99999999999999"))
+            session, opportunity.id, OpportunityUpdate(value_usd=Decimal(99999999999999))
         )
