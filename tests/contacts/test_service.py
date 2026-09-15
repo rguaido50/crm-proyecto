@@ -52,3 +52,12 @@ async def test_update_contact_changes_only_the_given_fields(session: AsyncSessio
 
     assert updated.name == "Ada Lovelace"
     assert updated.company == "New Co"
+
+
+async def test_delete_contact_removes_it(session: AsyncSession) -> None:
+    created = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    await service.delete_contact(session, created.id)
+
+    with pytest.raises(service.ContactNotFoundError):
+        await service.get_contact(session, created.id)
