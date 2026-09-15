@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactUpdate
-from crm.core.errors import HasDependentsError, NotFoundError
+from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
 
 
 class ContactNotFoundError(NotFoundError):
@@ -12,6 +12,10 @@ class ContactNotFoundError(NotFoundError):
 
 
 class ContactHasDependentsError(HasDependentsError):
+    pass
+
+
+class ContactValidationError(ValidationError):
     pass
 
 
@@ -37,7 +41,10 @@ async def list_contacts(session: AsyncSession) -> list[Contact]:
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:
     contact = await get_contact(session, contact_id)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    if "name" in updates and not updates["name"]:
+        raise ContactValidationError("name cannot be empty")
+    for field, value in updates.items():
         setattr(contact, field, value)
     await session.commit()
     await session.refresh(contact)

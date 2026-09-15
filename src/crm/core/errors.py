@@ -4,3 +4,7 @@ class NotFoundError(Exception):
 
 class HasDependentsError(Exception):
     pass
+
+
+class ValidationError(Exception):
+    pass

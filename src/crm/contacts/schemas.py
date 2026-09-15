@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ContactCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     company: str | None = None
     email: str | None = None
     phone: str | None = None
