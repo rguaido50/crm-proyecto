@@ -4,13 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactUpdate
+from crm.core.errors import HasDependentsError, NotFoundError
 
 
-class ContactNotFoundError(Exception):
+class ContactNotFoundError(NotFoundError):
     pass
 
 
-class ContactHasDependentsError(Exception):
+class ContactHasDependentsError(HasDependentsError):
     pass
 
 

@@ -11,12 +11,8 @@ class ContactCreate(BaseModel):
     notes: str | None = None
 
 
-class ContactUpdate(BaseModel):
-    name: str | None = None
-    company: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    notes: str | None = None
+class ContactUpdate(ContactCreate):
+    name: str | None = None  # type: ignore[assignment]
 
 
 class ContactRead(BaseModel):

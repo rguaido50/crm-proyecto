@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', path='bootstrap/bootstrap.min.css') }}">
   <script src="{{ url_for('static', path='htmx/htmx.min.js') }}" defer></script>
 </head>
-<body hx-boost="true">
+<body>
   <div class="d-flex">
     <nav class="d-flex flex-column flex-shrink-0 p-3 bg-light border-end" style="width: 220px; min-height: 100vh;">
       <span class="fs-4 mb-3">itela CRM</span>
@@ -19,7 +19,7 @@
         <li class="nav-item"><a href="/reports" class="nav-link link-dark">Reports</a></li>
       </ul>
     </nav>
-    <main class="flex-grow-1 p-4">
+    <main class="flex-grow-1 p-4" hx-boost="true">
       {% block content %}{% endblock %}
     </main>
   </div>

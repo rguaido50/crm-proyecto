@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts import service
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactRead, ContactUpdate
-from crm.contacts.service import ContactHasDependentsError, ContactNotFoundError
 from crm.core.db import get_session
 
 router = APIRouter(prefix="/api/contacts", tags=["contacts"])
@@ -26,30 +25,16 @@ async def list_contacts(
 
 @router.get("/{contact_id}", response_model=ContactRead)
 async def get_contact(contact_id: int, session: AsyncSession = Depends(get_session)) -> Contact:
-    try:
-        return await service.get_contact(session, contact_id)
-    except ContactNotFoundError:
-        raise HTTPException(status_code=404, detail="Contact not found") from None
+    return await service.get_contact(session, contact_id)
 
 
 @router.patch("/{contact_id}", response_model=ContactRead)
 async def update_contact(
     contact_id: int, data: ContactUpdate, session: AsyncSession = Depends(get_session)
 ) -> Contact:
-    try:
-        return await service.update_contact(session, contact_id, data)
-    except ContactNotFoundError:
-        raise HTTPException(status_code=404, detail="Contact not found") from None
+    return await service.update_contact(session, contact_id, data)
 
 
 @router.delete("/{contact_id}", status_code=204)
 async def delete_contact(contact_id: int, session: AsyncSession = Depends(get_session)) -> None:
-    try:
-        await service.delete_contact(session, contact_id)
-    except ContactNotFoundError:
-        raise HTTPException(status_code=404, detail="Contact not found") from None
-    except ContactHasDependentsError:
-        raise HTTPException(
-            status_code=409,
-            detail="Cannot delete a contact that still has opportunities or tasks",
-        ) from None
+    await service.delete_contact(session, contact_id)
