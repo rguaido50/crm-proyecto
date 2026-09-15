@@ -34,9 +34,7 @@ async def list_contacts(session: AsyncSession) -> list[Contact]:
     return list(result.scalars().all())
 
 
-async def update_contact(
-    session: AsyncSession, contact_id: int, data: ContactUpdate
-) -> Contact:
+async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:
     contact = await get_contact(session, contact_id)
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(contact, field, value)

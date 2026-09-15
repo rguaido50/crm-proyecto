@@ -46,9 +46,7 @@ async def test_update_contact_changes_only_the_given_fields(session: AsyncSessio
         session, ContactCreate(name="Ada Lovelace", company="Acme")
     )
 
-    updated = await service.update_contact(
-        session, created.id, ContactUpdate(company="New Co")
-    )
+    updated = await service.update_contact(session, created.id, ContactUpdate(company="New Co"))
 
     assert updated.name == "Ada Lovelace"
     assert updated.company == "New Co"

@@ -25,9 +25,7 @@ async def list_contacts(
 
 
 @router.get("/{contact_id}", response_model=ContactRead)
-async def get_contact(
-    contact_id: int, session: AsyncSession = Depends(get_session)
-) -> Contact:
+async def get_contact(contact_id: int, session: AsyncSession = Depends(get_session)) -> Contact:
     try:
         return await service.get_contact(session, contact_id)
     except ContactNotFoundError:
@@ -45,9 +43,7 @@ async def update_contact(
 
 
 @router.delete("/{contact_id}", status_code=204)
-async def delete_contact(
-    contact_id: int, session: AsyncSession = Depends(get_session)
-) -> None:
+async def delete_contact(contact_id: int, session: AsyncSession = Depends(get_session)) -> None:
     try:
         await service.delete_contact(session, contact_id)
     except ContactNotFoundError:

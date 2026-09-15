@@ -15,9 +15,7 @@ async def list_contacts_page(
     request: Request, session: AsyncSession = Depends(get_session)
 ) -> HTMLResponse:
     contacts = await service.list_contacts(session)
-    return templates.TemplateResponse(
-        request, "contacts/list.html", {"contacts": contacts}
-    )
+    return templates.TemplateResponse(request, "contacts/list.html", {"contacts": contacts})
 
 
 @router.get("/contacts/{contact_id}", response_class=HTMLResponse)
@@ -25,9 +23,7 @@ async def contact_detail_page(
     contact_id: int, request: Request, session: AsyncSession = Depends(get_session)
 ) -> HTMLResponse:
     contact = await service.get_contact(session, contact_id)
-    return templates.TemplateResponse(
-        request, "contacts/detail.html", {"contact": contact}
-    )
+    return templates.TemplateResponse(request, "contacts/detail.html", {"contact": contact})
 
 
 @router.post("/contacts", response_class=RedirectResponse)
