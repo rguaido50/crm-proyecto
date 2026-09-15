@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts import service
 from crm.contacts.schemas import ContactCreate
+from crm.opportunities import service as opportunities_service
+from crm.opportunities.schemas import OpportunityCreate
 
 
 async def test_contacts_list_page_shows_a_seeded_contact(
@@ -25,6 +27,34 @@ async def test_contact_detail_page_shows_the_activity_history_section(
 
     assert response.status_code == 200
     assert "Activity history" in response.text
+
+
+async def test_contacts_list_page_shows_the_open_opportunity_count(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    response = await client.get("/contacts")
+
+    assert response.status_code == 200
+    assert ">1<" in response.text
+
+
+async def test_contact_detail_page_shows_its_opportunities_table(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="itela support deal", owner="Sam")
+    )
+
+    response = await client.get(f"/contacts/{contact.id}")
+
+    assert response.status_code == 200
+    assert "itela support deal" in response.text
 
 
 async def test_detail_page_redirects_instead_of_500ing_for_a_missing_contact(

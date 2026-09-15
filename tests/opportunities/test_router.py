@@ -34,3 +34,10 @@ async def test_update_opportunity_to_lost_returns_closed_at_populated(
 
     assert response.status_code == 200
     assert response.json()["closed_at"] is not None
+
+
+async def test_list_open_by_stage_includes_a_known_stage_key(client: AsyncClient) -> None:
+    response = await client.get("/api/opportunities")
+
+    assert response.status_code == 200
+    assert "poc" in response.json()

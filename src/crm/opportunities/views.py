@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.core.db import get_session
+from crm.core.errors import ValidationError
 from crm.core.templates import templates
 from crm.opportunities import service
 from crm.opportunities.models import OpportunityStage, OpportunityStatus
@@ -47,16 +48,21 @@ async def create_opportunity_form(
     expected_close_date: date | None = Form(None),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
-    await service.create_opportunity(
-        session,
-        OpportunityCreate(
-            contact_id=contact_id,
-            title=title,
-            value_usd=value_usd,
-            owner=owner,
-            expected_close_date=expected_close_date,
-        ),
-    )
+    try:
+        await service.create_opportunity(
+            session,
+            OpportunityCreate(
+                contact_id=contact_id,
+                title=title,
+                value_usd=value_usd,
+                owner=owner,
+                expected_close_date=expected_close_date,
+            ),
+        )
+    except ValidationError:
+        # Redirect to the contact we know the form was submitted from, rather than
+        # falling through to the generic handler's plain /contacts.
+        return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)
     return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)
 
 
@@ -71,16 +77,20 @@ async def update_opportunity_form(
     expected_close_date: date | None = Form(None),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
-    opportunity = await service.update_opportunity(
-        session,
-        opportunity_id,
-        OpportunityUpdate(
-            title=title,
-            value_usd=value_usd,
-            stage=stage,
-            status=status,
-            owner=owner,
-            expected_close_date=expected_close_date,
-        ),
-    )
-    return RedirectResponse(url=f"/contacts/{opportunity.contact_id}", status_code=303)
+    contact_id = (await service.get_opportunity(session, opportunity_id)).contact_id
+    try:
+        await service.update_opportunity(
+            session,
+            opportunity_id,
+            OpportunityUpdate(
+                title=title,
+                value_usd=value_usd,
+                stage=stage,
+                status=status,
+                owner=owner,
+                expected_close_date=expected_close_date,
+            ),
+        )
+    except ValidationError:
+        return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)
+    return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)

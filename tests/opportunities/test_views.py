@@ -51,6 +51,42 @@ async def test_create_opportunity_form_redirects_to_the_contact_detail_page(
     assert len(opportunities) == 1
 
 
+async def test_create_opportunity_form_with_blank_optional_fields_succeeds(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    response = await client.post(
+        "/opportunities",
+        data={
+            "contact_id": contact.id,
+            "title": "Deal",
+            "owner": "Sam",
+            "value_usd": "",
+            "expected_close_date": "",
+        },
+    )
+
+    assert response.status_code == 303
+    opportunities = await service.list_for_contact(session, contact.id)
+    assert opportunities[0].value_usd is None
+    assert opportunities[0].expected_close_date is None
+
+
+async def test_create_opportunity_form_with_a_blank_title_redirects_to_the_contact(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    response = await client.post(
+        "/opportunities", data={"contact_id": contact.id, "title": "   ", "owner": "Sam"}
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/contacts/{contact.id}"
+    assert await service.list_for_contact(session, contact.id) == []
+
+
 async def test_update_opportunity_form_redirects_to_the_contact_detail_page(
     client: AsyncClient, session: AsyncSession
 ) -> None:

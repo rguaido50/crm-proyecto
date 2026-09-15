@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from crm.core.errors import NotFoundError, ValidationError
+from crm.core.validation import require_non_blank
 from crm.opportunities.models import Opportunity, OpportunityStage, OpportunityStatus
 from crm.opportunities.schemas import OpportunityCreate, OpportunityUpdate
 
@@ -16,17 +17,10 @@ class OpportunityValidationError(ValidationError):
     pass
 
 
-def _require_non_blank(field: str, value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        raise OpportunityValidationError(f"{field} cannot be empty")
-    return stripped
-
-
 async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> Opportunity:
     fields = data.model_dump()
-    fields["title"] = _require_non_blank("title", fields["title"])
-    fields["owner"] = _require_non_blank("owner", fields["owner"])
+    fields["title"] = require_non_blank(fields["title"], "title", OpportunityValidationError)
+    fields["owner"] = require_non_blank(fields["owner"], "owner", OpportunityValidationError)
     opportunity = Opportunity(**fields)
     session.add(opportunity)
     try:
@@ -75,9 +69,9 @@ async def update_opportunity(
     opportunity = await get_opportunity(session, opportunity_id)
     updates = data.model_dump(exclude_unset=True)
     if "title" in updates:
-        updates["title"] = _require_non_blank("title", updates["title"])
+        updates["title"] = require_non_blank(updates["title"], "title", OpportunityValidationError)
     if "owner" in updates:
-        updates["owner"] = _require_non_blank("owner", updates["owner"])
+        updates["owner"] = require_non_blank(updates["owner"], "owner", OpportunityValidationError)
 
     new_status = updates.get("status")
     if new_status is not None and new_status != opportunity.status:
