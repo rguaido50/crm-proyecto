@@ -1,3 +1,6 @@
+from datetime import date
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,9 +42,9 @@ async def edit_opportunity_page(
 async def create_opportunity_form(
     contact_id: int = Form(...),
     title: str = Form(...),
-    value_usd: str | None = Form(None),
+    value_usd: Decimal | None = Form(None),
     owner: str = Form(...),
-    expected_close_date: str | None = Form(None),
+    expected_close_date: date | None = Form(None),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     await service.create_opportunity(
@@ -49,9 +52,9 @@ async def create_opportunity_form(
         OpportunityCreate(
             contact_id=contact_id,
             title=title,
-            value_usd=value_usd or None,
+            value_usd=value_usd,
             owner=owner,
-            expected_close_date=expected_close_date or None,
+            expected_close_date=expected_close_date,
         ),
     )
     return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)
@@ -61,11 +64,11 @@ async def create_opportunity_form(
 async def update_opportunity_form(
     opportunity_id: int,
     title: str = Form(...),
-    value_usd: str | None = Form(None),
+    value_usd: Decimal | None = Form(None),
     stage: OpportunityStage = Form(...),
     status: OpportunityStatus = Form(...),
     owner: str = Form(...),
-    expected_close_date: str | None = Form(None),
+    expected_close_date: date | None = Form(None),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     opportunity = await service.update_opportunity(
@@ -73,11 +76,11 @@ async def update_opportunity_form(
         opportunity_id,
         OpportunityUpdate(
             title=title,
-            value_usd=value_usd or None,
+            value_usd=value_usd,
             stage=stage,
             status=status,
             owner=owner,
-            expected_close_date=expected_close_date or None,
+            expected_close_date=expected_close_date,
         ),
     )
     return RedirectResponse(url=f"/contacts/{opportunity.contact_id}", status_code=303)
