@@ -29,3 +29,13 @@ async def test_get_contact_returns_the_matching_contact(session: AsyncSession) -
 async def test_get_contact_raises_for_a_missing_id(session: AsyncSession) -> None:
     with pytest.raises(service.ContactNotFoundError):
         await service.get_contact(session, 999999)
+
+
+async def test_list_contacts_returns_every_contact(session: AsyncSession) -> None:
+    await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await service.create_contact(session, ContactCreate(name="Grace Hopper"))
+
+    contacts = await service.list_contacts(session)
+
+    names = {contact.name for contact in contacts}
+    assert names == {"Ada Lovelace", "Grace Hopper"}
