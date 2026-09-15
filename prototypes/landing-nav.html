@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE — wipe me — landing screen &amp; navigation</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<style>
+  body { padding-bottom: 5rem; background: #f4f5f7; }
+  .proto-banner { background: #fff6d9; border-bottom: 2px solid #e0c97a; padding: .6rem 1rem; font-size: .85rem; }
+  .proto-section-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 2rem 0 .3rem; border-top: 1px dashed #ccc; padding-top: .6rem; }
+  .stage-col { background: #eceff3; border-radius: 8px; padding: .6rem; min-height: 260px; }
+  .stage-col h6 { font-size: .8rem; text-transform: uppercase; color: #666; }
+  .board-card { background: white; border-radius: 6px; padding: .5rem .6rem; margin-bottom: .5rem; box-shadow: 0 1px 2px rgba(0,0,0,.08); font-size: .85rem; }
+  .sidebar { width: 210px; background: #1f2430; color: #cfd3dc; min-height: 100vh; padding: 1rem .8rem; }
+  .sidebar a { color: #cfd3dc; text-decoration: none; display: block; padding: .45rem .6rem; border-radius: 6px; font-size: .9rem; }
+  .sidebar a.active, .sidebar a:hover { background: #333a4a; color: white; }
+  .activity-item { border-left: 2px solid #ddd; padding-left: .8rem; margin-bottom: .7rem; font-size: .85rem; }
+  .activity-item.pending { border-left-color: #d9a441; }
+  .activity-item.done { border-left-color: #2e8b57; }
+  .stat-pill { background: white; border-radius: 8px; padding: .6rem .9rem; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .proto-switcher { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+    background: #1c1c1c; color: white; border-radius: 999px; padding: .4rem .5rem; display: flex; align-items: center;
+    gap: .6rem; box-shadow: 0 4px 14px rgba(0,0,0,.35); z-index: 1000; font-size: .85rem; }
+  .proto-switcher button { background: #333; color: white; border: none; border-radius: 999px; width: 2rem; height: 2rem; cursor: pointer; }
+  .proto-switcher button:hover { background: #4a4a4a; }
+</style>
+</head>
+<body>
+
+<div class="proto-banner">
+  <strong>PROTOTYPE</strong> — resolves
+  <a href="https://github.com/rguaido50/crm-proyecto/issues/8" target="_blank">Decide the demo's landing screen and navigation (#8)</a>.
+  Three structurally different takes on landing screen, navigation, the Contact detail page and the
+  Opportunities view (table vs. board). Flip with the bar at the bottom or the ← → keys. Mock data only — nothing here is wired to a backend.
+</div>
+
+<div id="app"></div>
+
+<div class="proto-switcher">
+  <button id="prev" aria-label="previous variant">‹</button>
+  <span id="switch-label">A</span>
+  <button id="next" aria-label="next variant">›</button>
+</div>
+
+<script>
+const DATA = {
+  owner: 'Laura Fernández',
+  pipeline: [
+    { stage: 'new', label: 'New', sum: 97500, count: 5 },
+    { stage: 'qualified', label: 'Qualified', sum: 86300, count: 4 },
+    { stage: 'poc', label: 'PoC', sum: 0, count: 0 },
+    { stage: 'proposal', label: 'Proposal', sum: 147500, count: 4 },
+    { stage: 'negotiation', label: 'Negotiation', sum: 162000, count: 3 },
+  ],
+  winRate: 56,
+  funnel: [100, 83, 72, 67, 50],
+  opportunities: [
+    { company: 'Grupo Solvia', contact: 'Marta Robles', stage: 'New', status: 'open', value: 18000, owner: 'Laura Fernández' },
+    { company: 'Nortia Logística', contact: 'Iván Castells', stage: 'Qualified', status: 'open', value: 42000, owner: 'Marcos Ibáñez' },
+    { company: 'BancoFácil', contact: 'Rocío Peña', stage: 'Proposal', status: 'open', value: 65000, owner: 'Marcos Ibáñez' },
+    { company: 'Hidrotec Ingeniería', contact: 'Sonia Blázquez', stage: 'Negotiation', status: 'open', value: 89000, owner: 'Marcos Ibáñez' },
+    { company: 'Clínica Medisur', contact: 'Beatriz Ortega', stage: 'New', status: 'open', value: 25000, owner: 'Elena Torres' },
+    { company: 'Muebles Larén', contact: 'Cristina Nogales', stage: 'Negotiation', status: 'won', value: 37000, owner: 'Laura Fernández' },
+    { company: 'Energía Verde SL', contact: 'Héctor Domínguez', stage: 'Proposal', status: 'lost', value: 29000, owner: 'Elena Torres' },
+  ],
+  contact: {
+    name: 'Marta Robles', company: 'Grupo Solvia',
+    opportunities: [{ label: 'New — $18,000', stage: 'New' }],
+    activity: [
+      { done: true, date: '2026-08-20', text: 'Llamada de seguimiento trimestral' },
+      { done: true, date: '2026-07-02', text: 'Reunión inicial de descubrimiento' },
+      { done: false, date: null, text: 'Enviar propuesta técnica inicial' },
+    ],
+  },
+};
+
+const money = v => '$' + v.toLocaleString('en-US');
+const badge = status => status === 'won' ? 'success' : status === 'lost' ? 'danger' : 'primary';
+
+function reportCards(d) {
+  return `
+    <div class="row g-3 mb-3">
+      ${d.pipeline.map(p => `
+        <div class="col">
+          <div class="stat-pill text-center">
+            <div class="text-muted small">${p.label}</div>
+            <div class="fw-bold">${money(p.sum)}</div>
+            <div class="text-muted small">${p.count} deals</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="stat-pill">
+          <div class="text-muted small mb-1">Conversion funnel</div>
+          ${d.funnel.map((pct, i) => `
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div style="width:80px" class="small">${['New','Qualified','PoC','Proposal','Negotiation'][i]}</div>
+              <div class="flex-grow-1 bg-light rounded" style="height:10px"><div class="bg-primary rounded" style="height:10px;width:${pct}%"></div></div>
+              <div class="small" style="width:34px">${pct}%</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="stat-pill text-center h-100 d-flex flex-column justify-content-center">
+          <div class="text-muted small">Win rate (last 3 months)</div>
+          <div class="display-6 fw-bold text-success">${d.winRate}%</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function oppsTable(d) {
+  return `
+    <table class="table table-sm bg-white">
+      <thead><tr><th>Company</th><th>Contact</th><th>Stage</th><th>Status</th><th>Value</th><th>Owner</th></tr></thead>
+      <tbody>
+        ${d.opportunities.map(o => `
+          <tr>
+            <td>${o.company}</td><td>${o.contact}</td><td>${o.stage}</td>
+            <td><span class="badge text-bg-${badge(o.status)}">${o.status}</span></td>
+            <td>${money(o.value)}</td><td>${o.owner}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function oppsBoard(d) {
+  const stages = ['New', 'Qualified', 'PoC', 'Proposal', 'Negotiation'];
+  return `
+    <div class="row g-2">
+      ${stages.map(stage => `
+        <div class="col">
+          <div class="stage-col">
+            <h6>${stage}</h6>
+            ${d.opportunities.filter(o => o.stage === stage && o.status === 'open').map(o => `
+              <div class="board-card">
+                <div class="fw-semibold">${o.company}</div>
+                <div class="text-muted">${money(o.value)} · ${o.owner}</div>
+              </div>`).join('') || '<div class="text-muted small fst-italic">empty</div>'}
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function activityList(items) {
+  return items.map(a => `
+    <div class="activity-item ${a.done ? 'done' : 'pending'}">
+      ${a.done ? `<div class="small text-muted">${a.date}</div><div>${a.text}</div>`
+               : `<div class="small text-warning-emphasis">pending</div><div>${a.text}</div>`}
+    </div>`).join('');
+}
+
+// -----------------------------------------------------------------
+// Variant A — Reports-first: top navbar, dashboard landing, table view
+// -----------------------------------------------------------------
+function VariantA(d) {
+  return `
+    <nav class="navbar navbar-expand navbar-dark bg-dark px-3">
+      <span class="navbar-brand">itela CRM</span>
+      <div class="navbar-nav">
+        <a class="nav-link active" href="#">Reports</a>
+        <a class="nav-link" href="#">Pipeline</a>
+        <a class="nav-link" href="#">Contacts</a>
+        <a class="nav-link" href="#">Tasks</a>
+      </div>
+    </nav>
+    <div class="container-fluid p-4">
+      <h4>Reports</h4>
+      <p class="text-muted small">The demo opens here — the three charts are the argument for the room.</p>
+      ${reportCards(d)}
+
+      <div class="proto-section-label">Opportunities view — table</div>
+      <h5>Pipeline</h5>
+      ${oppsTable(d)}
+
+      <div class="proto-section-label">Contact detail page — single column, activity at the bottom</div>
+      <div class="card p-3" style="max-width:640px">
+        <h5>${d.contact.name} <span class="text-muted fs-6">— ${d.contact.company}</span></h5>
+        <div class="small text-muted mb-2">Open opportunities: ${d.contact.opportunities.map(o=>o.label).join(', ')}</div>
+        <h6 class="mt-3">Activity history</h6>
+        ${activityList(d.contact.activity)}
+      </div>
+    </div>`;
+}
+
+// -----------------------------------------------------------------
+// Variant B — Pipeline-first: left sidebar, board landing, board view
+// -----------------------------------------------------------------
+function VariantB(d) {
+  return `
+    <div class="d-flex">
+      <div class="sidebar">
+        <div class="fw-bold mb-3">itela CRM</div>
+        <a class="active" href="#">Pipeline</a>
+        <a href="#">Reports</a>
+        <a href="#">Contacts</a>
+        <a href="#">Tasks</a>
+      </div>
+      <div class="flex-grow-1 p-4">
+        <h4>Pipeline</h4>
+        <p class="text-muted small">The demo opens on the board — money moving through stages, not a chart of it.</p>
+        ${oppsBoard(d)}
+
+        <div class="proto-section-label">Reports — reached from the sidebar, not the landing screen</div>
+        ${reportCards(d)}
+
+        <div class="proto-section-label">Contact detail page — two columns, activity always visible on the right</div>
+        <div class="row">
+          <div class="col-md-7">
+            <div class="card p-3">
+              <h5>${d.contact.name} <span class="text-muted fs-6">— ${d.contact.company}</span></h5>
+              <div class="small text-muted">Open opportunities: ${d.contact.opportunities.map(o=>o.label).join(', ')}</div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="card p-3">
+              <h6>Activity</h6>
+              ${activityList(d.contact.activity)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// -----------------------------------------------------------------
+// Variant C — Contact-centric: tab bar, contact-list landing, table/board toggle
+// -----------------------------------------------------------------
+function VariantC(d) {
+  return `
+    <nav class="navbar navbar-expand bg-white border-bottom px-3">
+      <span class="navbar-brand">itela CRM</span>
+      <ul class="nav nav-tabs border-0">
+        <li class="nav-item"><a class="nav-link active" href="#">Contacts</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Pipeline</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Tasks</a></li>
+      </ul>
+      <input class="form-control form-control-sm ms-auto" style="max-width:200px" placeholder="Search contacts…" disabled>
+    </nav>
+    <div class="container-fluid p-4">
+      <div class="d-flex gap-3 mb-3">
+        <div class="stat-pill">Open pipeline <strong>${money(d.pipeline.reduce((a,p)=>a+p.sum,0))}</strong></div>
+        <div class="stat-pill">Win rate <strong>${d.winRate}%</strong></div>
+      </div>
+      <h4>Contacts</h4>
+      <p class="text-muted small">The demo opens on "who are we talking to" — the CRM's actual root entity.</p>
+      <table class="table table-sm bg-white">
+        <thead><tr><th>Name</th><th>Company</th><th>Open opportunities</th></tr></thead>
+        <tbody>
+          ${[...new Set(d.opportunities.map(o=>o.company))].map(company => {
+            const rows = d.opportunities.filter(o => o.company === company);
+            return `<tr><td>${rows[0].contact}</td><td>${company}</td><td>${rows.filter(o=>o.status==='open').length}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <div class="proto-section-label">Opportunities view — toggle between table and board</div>
+      <div class="btn-group btn-group-sm mb-2" role="group">
+        <button class="btn btn-primary">Table</button>
+        <button class="btn btn-outline-primary">Board</button>
+      </div>
+      ${oppsTable(d)}
+
+      <div class="proto-section-label">Contact detail page — tabbed: Overview / Opportunities / Activity</div>
+      <div class="card p-3" style="max-width:640px">
+        <h5>${d.contact.name} <span class="text-muted fs-6">— ${d.contact.company}</span></h5>
+        <ul class="nav nav-tabs mt-2 mb-3">
+          <li class="nav-item"><a class="nav-link" href="#">Overview</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Opportunities</a></li>
+          <li class="nav-item"><a class="nav-link active" href="#">Activity</a></li>
+        </ul>
+        ${activityList(d.contact.activity)}
+      </div>
+    </div>`;
+}
+
+const VARIANTS = {
+  A: { render: VariantA, name: 'Reports-first · top navbar · table' },
+  B: { render: VariantB, name: 'Pipeline-first · sidebar · board' },
+  C: { render: VariantC, name: 'Contact-first · tabs · table/board toggle' },
+};
+const KEYS = Object.keys(VARIANTS);
+
+function currentVariant() {
+  const v = new URLSearchParams(location.search).get('variant');
+  return KEYS.includes(v) ? v : 'A';
+}
+
+function render() {
+  const key = currentVariant();
+  document.getElementById('app').innerHTML = VARIANTS[key].render(DATA);
+  document.getElementById('switch-label').textContent = `${key} — ${VARIANTS[key].name}`;
+}
+
+function go(delta) {
+  const i = (KEYS.indexOf(currentVariant()) + delta + KEYS.length) % KEYS.length;
+  const url = new URL(location);
+  url.searchParams.set('variant', KEYS[i]);
+  history.replaceState(null, '', url);
+  render();
+}
+
+document.getElementById('prev').onclick = () => go(-1);
+document.getElementById('next').onclick = () => go(1);
+window.addEventListener('keydown', e => {
+  const el = document.activeElement;
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+  if (e.key === 'ArrowLeft') go(-1);
+  if (e.key === 'ArrowRight') go(1);
+});
+
+render();
+</script>
+</body>
+</html>
