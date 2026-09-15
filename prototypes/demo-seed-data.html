@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PROTOTYPE — wipe me — demo seed data</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1rem; color: #1c1c1c; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 2.5rem; border-bottom: 2px solid #ddd; padding-bottom: .3rem; }
+  .intro { background: #fff6d9; border: 1px solid #e0c97a; padding: 1rem; border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; margin-top: .5rem; font-size: .85rem; }
+  th, td { border: 1px solid #ddd; padding: .35rem .5rem; text-align: left; }
+  th { background: #f2f2f2; }
+  .null { color: #b33; font-style: italic; }
+  .bar-row { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; }
+  .bar-label { width: 130px; font-size: .85rem; flex-shrink: 0; }
+  .bar-track { flex: 1; background: #eee; border-radius: 3px; overflow: hidden; height: 18px; position: relative; }
+  .bar-fill { background: #3b7dd8; height: 100%; }
+  .bar-fill.lost { background: #c0392b; }
+  .bar-fill.won { background: #2e8b57; }
+  .bar-value { font-size: .8rem; white-space: nowrap; }
+  .panel { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .panel > div { flex: 1; min-width: 280px; }
+  .stat { font-size: 1.6rem; font-weight: bold; }
+  .stack { display: flex; height: 18px; border-radius: 3px; overflow: hidden; width: 100%; }
+  code { background: #f2f2f2; padding: .1rem .3rem; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>PROTOTYPE — demo seed data for itela's CRM</h1>
+<div class="intro">
+  <strong>Question this answers:</strong> does <em>this</em> set of seed rows (Contacts, Opportunities, Tasks)
+  actually give the three reports from
+  <a href="https://github.com/rguaido50/crm-proyecto/issues/3">issue #3</a> visible shape, given the fixed
+  three-calendar-month window (<code>2026-07-01 .. 2026-09-30</code>, "today" = <code>2026-09-15</code>)?
+  Resolves <a href="https://github.com/rguaido50/crm-proyecto/issues/4">Define the demo seed data set (#4)</a>.
+  <br><br>
+  This is a static data review, not a state machine — there is nothing to click through. The report
+  calculations below are written as three pure functions mirroring the #3 spec exactly, so if the shape
+  looks right here, that logic can be lifted almost as-is into <code>reports/service.py</code> later.
+  Deliberately deviates from the usual free-play-buttons template for that reason.
+  <br><br>
+  <strong>React to:</strong> company/contact names, counts per stage, and the money spread — not the pixels.
+</div>
+
+<h2>Owners</h2>
+<p id="owners"></p>
+
+<h2>Contacts &amp; Opportunities (<span id="opp-count"></span> opportunities on <span id="contact-count"></span> contacts)</h2>
+<table id="opp-table">
+  <thead><tr><th>Contact</th><th>Company</th><th>Stage</th><th>Status</th><th>Value (USD)</th><th>Closed at</th><th>Owner</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<h2>Tasks (<span id="task-count"></span>)</h2>
+<table id="task-table">
+  <thead><tr><th>Contact</th><th>Opportunity</th><th>Description</th><th>Status</th><th>Completed at</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<h2>Report preview 1 — Pipeline by stage</h2>
+<div id="pipeline"></div>
+
+<h2>Report preview 2 — Won / lost by month</h2>
+<div id="wonlost"></div>
+
+<h2>Report preview 3 — Conversion funnel &amp; win rate</h2>
+<div id="funnel"></div>
+
+<script>
+// ---------------------------------------------------------------------
+// Data — the actual proposal. Edit these arrays directly to react to it.
+// ---------------------------------------------------------------------
+const STAGES = ['new', 'qualified', 'poc', 'proposal', 'negotiation'];
+const TODAY = '2026-09-15'; // fixed "today" for this prototype
+
+const OWNERS = ['Laura Fernández', 'Marcos Ibáñez', 'Elena Torres', 'David Prieto'];
+
+const CONTACTS = [
+  { id: 1,  name: 'Marta Robles',      company: 'Grupo Solvia' },
+  { id: 2,  name: 'Iván Castells',     company: 'Nortia Logística' },
+  { id: 3,  name: 'Rocío Peña',        company: 'BancoFácil' },
+  { id: 4,  name: 'Álvaro Ruiz',       company: 'Talento Digital' },
+  { id: 5,  name: 'Sonia Blázquez',    company: 'Hidrotec Ingeniería' },
+  { id: 6,  name: 'Pablo Escudero',    company: 'Vértice Seguros' },
+  { id: 7,  name: 'Cristina Nogales',  company: 'Muebles Larén' },
+  { id: 8,  name: 'Rubén Salgado',     company: 'Aeroparts Ibérica' },
+  { id: 9,  name: 'Beatriz Ortega',    company: 'Clínica Medisur' },
+  { id: 10, name: 'Jorge Villalba',    company: 'Cerámicas del Sur' },
+  { id: 11, name: 'Lucía Bermejo',     company: 'Retail Norte' },
+  { id: 12, name: 'Óscar Vidal',       company: 'Retail Norte' },
+  { id: 13, name: 'Patricia Lamas',    company: 'Puerto Digital' },
+  { id: 14, name: 'Andrés Cobo',       company: 'Fintel Consulting' },
+  { id: 15, name: 'Nuria Falcón',      company: 'Agroexport Levante' },
+  { id: 16, name: 'Diego Marín',       company: 'TransEuropa' },
+  { id: 17, name: 'Silvia Reyes',      company: 'TransEuropa' },
+  { id: 18, name: 'Carla Espina',      company: 'Editorial Aurora' },
+  { id: 19, name: 'Héctor Domínguez',  company: 'Energía Verde SL' },
+  { id: 20, name: 'Marina Prats',      company: 'Instituto Formativo Delta' },
+];
+
+// status: 'open' | 'won' | 'lost'. closedAt is null for open. value can be null (excluded from sums).
+const OPPORTUNITIES = [
+  // --- open (16), spread across stages; 'poc' deliberately empty; one null value ---
+  { id: 1,  contactId: 1,  stage: 'new',         status: 'open', value: 18000, closedAt: null, owner: 'Laura Fernández' },
+  { id: 2,  contactId: 4,  stage: 'new',         status: 'open', value: 9500,  closedAt: null, owner: 'Marcos Ibáñez' },
+  { id: 3,  contactId: 9,  stage: 'new',         status: 'open', value: 25000, closedAt: null, owner: 'Elena Torres' },
+  { id: 4,  contactId: 15, stage: 'new',         status: 'open', value: 14000, closedAt: null, owner: 'David Prieto' },
+  { id: 5,  contactId: 19, stage: 'new',         status: 'open', value: 31000, closedAt: null, owner: 'Laura Fernández' },
+  { id: 6,  contactId: 2,  stage: 'qualified',   status: 'open', value: 42000, closedAt: null, owner: 'Marcos Ibáñez' },
+  { id: 7,  contactId: 6,  stage: 'qualified',   status: 'open', value: null,  closedAt: null, owner: 'Elena Torres' },
+  { id: 8,  contactId: 11, stage: 'qualified',   status: 'open', value: 27500, closedAt: null, owner: 'David Prieto' },
+  { id: 9,  contactId: 17, stage: 'qualified',   status: 'open', value: 16800, closedAt: null, owner: 'Laura Fernández' },
+  { id: 10, contactId: 3,  stage: 'proposal',    status: 'open', value: 65000, closedAt: null, owner: 'Marcos Ibáñez' },
+  { id: 11, contactId: 8,  stage: 'proposal',    status: 'open', value: 48000, closedAt: null, owner: 'Elena Torres' },
+  { id: 12, contactId: 13, stage: 'proposal',    status: 'open', value: 22000, closedAt: null, owner: 'David Prieto' },
+  { id: 13, contactId: 18, stage: 'proposal',    status: 'open', value: 12500, closedAt: null, owner: 'Laura Fernández' },
+  { id: 14, contactId: 5,  stage: 'negotiation', status: 'open', value: 89000, closedAt: null, owner: 'Marcos Ibáñez' },
+  { id: 15, contactId: 12, stage: 'negotiation', status: 'open', value: 54000, closedAt: null, owner: 'Elena Torres' },
+  { id: 16, contactId: 20, stage: 'negotiation', status: 'open', value: 19000, closedAt: null, owner: 'David Prieto' },
+
+  // --- closed (18), all within 2026-07-01..2026-09-15, spread across the 3 months and across frozen stages ---
+  // July: 4 won, 3 lost
+  { id: 17, contactId: 7,  stage: 'negotiation', status: 'won',  value: 37000, closedAt: '2026-07-03', owner: 'Laura Fernández' },
+  { id: 18, contactId: 10, stage: 'negotiation', status: 'won',  value: 22500, closedAt: '2026-07-11', owner: 'Marcos Ibáñez' },
+  { id: 19, contactId: 14, stage: 'proposal',    status: 'won',  value: 15800, closedAt: '2026-07-18', owner: 'Elena Torres' },
+  { id: 20, contactId: 16, stage: 'negotiation', status: 'won',  value: 61000, closedAt: '2026-07-27', owner: 'David Prieto' },
+  { id: 21, contactId: 1,  stage: 'new',         status: 'lost', value: 8000,  closedAt: '2026-07-05', owner: 'Laura Fernández' },
+  { id: 22, contactId: 9,  stage: 'qualified',   status: 'lost', value: 17500, closedAt: '2026-07-14', owner: 'Marcos Ibáñez' },
+  { id: 23, contactId: 19, stage: 'proposal',    status: 'lost', value: 29000, closedAt: '2026-07-22', owner: 'Elena Torres' },
+  // August: 3 won, 2 lost
+  { id: 24, contactId: 2,  stage: 'negotiation', status: 'won',  value: 51000, closedAt: '2026-08-02', owner: 'David Prieto' },
+  { id: 25, contactId: 6,  stage: 'negotiation', status: 'won',  value: 33500, closedAt: '2026-08-10', owner: 'Laura Fernández' },
+  { id: 26, contactId: 17, stage: 'proposal',    status: 'won',  value: 24000, closedAt: '2026-08-21', owner: 'Marcos Ibáñez' },
+  { id: 27, contactId: 11, stage: 'poc',         status: 'lost', value: 19500, closedAt: '2026-08-08', owner: 'Elena Torres' },
+  { id: 28, contactId: 3,  stage: 'negotiation', status: 'lost', value: 72000, closedAt: '2026-08-25', owner: 'David Prieto' },
+  // September (partial, through the 15th): 3 won, 3 lost — one lost with a null value
+  { id: 29, contactId: 8,  stage: 'negotiation', status: 'won',  value: 43000, closedAt: '2026-09-04', owner: 'Laura Fernández' },
+  { id: 30, contactId: 13, stage: 'negotiation', status: 'won',  value: 27800, closedAt: '2026-09-09', owner: 'Marcos Ibáñez' },
+  { id: 31, contactId: 18, stage: 'negotiation', status: 'won',  value: 16000, closedAt: '2026-09-13', owner: 'Elena Torres' },
+  { id: 32, contactId: 5,  stage: 'new',         status: 'lost', value: 12000, closedAt: '2026-09-02', owner: 'David Prieto' },
+  { id: 33, contactId: 20, stage: 'qualified',   status: 'lost', value: null,  closedAt: '2026-09-07', owner: 'Laura Fernández' },
+  { id: 34, contactId: 4,  stage: 'new',         status: 'lost', value: 6500,  closedAt: '2026-09-12', owner: 'Marcos Ibáñez' },
+];
+
+const TASKS = [
+  { id: 1,  contactId: 1,  opportunityId: 1,  description: 'Enviar propuesta técnica inicial',        status: 'pending',   completedAt: null },
+  { id: 2,  contactId: 1,  opportunityId: null, description: 'Llamada de seguimiento trimestral',      status: 'completed', completedAt: '2026-08-20' },
+  { id: 3,  contactId: 3,  opportunityId: 10, description: 'Preparar demo para comité de compras',     status: 'pending',   completedAt: null },
+  { id: 4,  contactId: 5,  opportunityId: 14, description: 'Confirmar fecha de firma de contrato',     status: 'pending',   completedAt: null },
+  { id: 5,  contactId: 7,  opportunityId: 17, description: 'Enviar factura y kickoff',                 status: 'completed', completedAt: '2026-07-05' },
+  { id: 6,  contactId: 9,  opportunityId: 3,  description: 'Agendar reunión técnica con IT',            status: 'pending',   completedAt: null },
+  { id: 7,  contactId: 11, opportunityId: 8,  description: 'Resolver dudas sobre integración',          status: 'pending',   completedAt: null },
+  { id: 8,  contactId: 14, opportunityId: 19, description: 'Onboarding post-cierre',                    status: 'completed', completedAt: '2026-07-20' },
+  { id: 9,  contactId: 16, opportunityId: null, description: 'Renovación de contrato de mantenimiento', status: 'pending',   completedAt: null },
+  { id: 10, contactId: 18, opportunityId: 13, description: 'Revisar alcance con legal',                 status: 'pending',   completedAt: null },
+  { id: 11, contactId: 20, opportunityId: 16, description: 'Enviar propuesta económica revisada',       status: 'pending',   completedAt: null },
+  { id: 12, contactId: 6,  opportunityId: 7,  description: 'Videollamada de calificación',               status: 'completed', completedAt: '2026-09-10' },
+];
+
+// ---------------------------------------------------------------------
+// Report logic — pure functions mirroring the #3 spec exactly.
+// Liftable into reports/service.py more or less as-is once ORM rows replace these plain objects.
+// ---------------------------------------------------------------------
+function monthKey(dateStr) { return dateStr.slice(0, 7); } // 'YYYY-MM'
+
+function lastThreeMonthKeys(todayStr) {
+  const [y, m] = todayStr.slice(0, 7).split('-').map(Number);
+  const keys = [];
+  for (let i = 2; i >= 0; i--) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    keys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  }
+  return keys; // oldest -> newest, always length 3
+}
+
+function pipelineByStage(opportunities) {
+  return STAGES.map(stage => {
+    const inStage = opportunities.filter(o => o.status === 'open' && o.stage === stage);
+    const valued = inStage.filter(o => o.value !== null);
+    return {
+      stage,
+      sum: valued.reduce((acc, o) => acc + o.value, 0),
+      count: inStage.length,
+      unvaluedCount: inStage.length - valued.length,
+    };
+  });
+}
+
+function wonLostByMonth(opportunities, todayStr) {
+  const keys = lastThreeMonthKeys(todayStr);
+  const closed = opportunities.filter(o => (o.status === 'won' || o.status === 'lost') && keys.includes(monthKey(o.closedAt)));
+  return keys.map(key => {
+    const inMonth = closed.filter(o => monthKey(o.closedAt) === key);
+    const won = inMonth.filter(o => o.status === 'won');
+    const lost = inMonth.filter(o => o.status === 'lost');
+    return {
+      month: key,
+      wonSum: won.filter(o => o.value !== null).reduce((a, o) => a + o.value, 0),
+      lostSum: lost.filter(o => o.value !== null).reduce((a, o) => a + o.value, 0),
+      wonCount: won.length,
+      lostCount: lost.length,
+    };
+  });
+}
+
+function conversionFunnel(opportunities, todayStr) {
+  const keys = lastThreeMonthKeys(todayStr);
+  const population = opportunities.filter(o => (o.status === 'won' || o.status === 'lost') && keys.includes(monthKey(o.closedAt)));
+  const won = population.filter(o => o.status === 'won').length;
+  const lost = population.filter(o => o.status === 'lost').length;
+  const winRate = (won + lost) === 0 ? null : won / (won + lost);
+  const funnel = STAGES.map((stage, idx) => {
+    const reached = population.filter(o => STAGES.indexOf(o.stage) >= idx).length;
+    return { stage, count: reached, pct: population.length === 0 ? 0 : reached / population.length };
+  });
+  return { population: population.length, won, lost, winRate, funnel };
+}
+
+// ---------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------
+const contactById = Object.fromEntries(CONTACTS.map(c => [c.id, c]));
+const fmtMoney = v => v === null ? '<span class="null">null</span>' : '$' + v.toLocaleString('en-US');
+
+document.getElementById('owners').textContent = OWNERS.join(', ');
+document.getElementById('contact-count').textContent = CONTACTS.length;
+document.getElementById('opp-count').textContent = OPPORTUNITIES.length;
+document.getElementById('task-count').textContent = TASKS.length;
+
+const oppBody = document.querySelector('#opp-table tbody');
+OPPORTUNITIES.forEach(o => {
+  const c = contactById[o.contactId];
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${c.name}</td><td>${c.company}</td><td>${o.stage}</td><td>${o.status}</td>
+    <td>${fmtMoney(o.value)}</td><td>${o.closedAt ?? ''}</td><td>${o.owner}</td>`;
+  oppBody.appendChild(tr);
+});
+
+const taskBody = document.querySelector('#task-table tbody');
+TASKS.forEach(t => {
+  const c = contactById[t.contactId];
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${c.name}</td><td>${t.opportunityId ? '#' + t.opportunityId : '—'}</td>
+    <td>${t.description}</td><td>${t.status}</td><td>${t.completedAt ?? ''}</td>`;
+  taskBody.appendChild(tr);
+});
+
+// Pipeline
+const pipeline = pipelineByStage(OPPORTUNITIES);
+const maxPipeline = Math.max(...pipeline.map(p => p.sum), 1);
+document.getElementById('pipeline').innerHTML = pipeline.map(p => `
+  <div class="bar-row">
+    <div class="bar-label">${p.stage}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${(p.sum / maxPipeline * 100).toFixed(0)}%"></div></div>
+    <div class="bar-value">$${p.sum.toLocaleString('en-US')} · ${p.count} deals${p.unvaluedCount ? ` (${p.unvaluedCount} unvalued)` : ''}</div>
+  </div>`).join('');
+
+// Won/lost by month
+const wl = wonLostByMonth(OPPORTUNITIES, TODAY);
+const maxWl = Math.max(...wl.flatMap(m => [m.wonSum, m.lostSum]), 1);
+document.getElementById('wonlost').innerHTML = wl.map(m => `
+  <div style="margin-bottom:.6rem">
+    <strong>${m.month}</strong>
+    <div class="bar-row"><div class="bar-label">won</div>
+      <div class="bar-track"><div class="bar-fill won" style="width:${(m.wonSum / maxWl * 100).toFixed(0)}%"></div></div>
+      <div class="bar-value">$${m.wonSum.toLocaleString('en-US')} (${m.wonCount})</div></div>
+    <div class="bar-row"><div class="bar-label">lost</div>
+      <div class="bar-track"><div class="bar-fill lost" style="width:${(m.lostSum / maxWl * 100).toFixed(0)}%"></div></div>
+      <div class="bar-value">$${m.lostSum.toLocaleString('en-US')} (${m.lostCount})</div></div>
+  </div>`).join('');
+
+// Funnel
+const fn = conversionFunnel(OPPORTUNITIES, TODAY);
+document.getElementById('funnel').innerHTML = `
+  <p>Population: ${fn.population} closed deals (${fn.won} won, ${fn.lost} lost) ·
+  <span class="stat">${fn.winRate === null ? '—' : (fn.winRate * 100).toFixed(0) + '%'}</span> win rate</p>
+  ${fn.funnel.map(f => `
+    <div class="bar-row">
+      <div class="bar-label">${f.stage}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(f.pct * 100).toFixed(0)}%"></div></div>
+      <div class="bar-value">${(f.pct * 100).toFixed(0)}% (${f.count})</div>
+    </div>`).join('')}
+`;
+</script>
+</body>
+</html>
