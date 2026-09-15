@@ -116,3 +116,39 @@ async def test_update_opportunity_sets_closed_at_and_keeps_stage_when_status_lea
 
     assert updated.closed_at is not None
     assert updated.stage == OpportunityStage.PROPOSAL
+
+
+async def test_update_opportunity_clears_closed_at_when_reopened(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+    opportunity = await service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+    closed = await service.update_opportunity(
+        session, opportunity.id, OpportunityUpdate(status=OpportunityStatus.LOST)
+    )
+    assert closed.closed_at is not None
+
+    reopened = await service.update_opportunity(
+        session, opportunity.id, OpportunityUpdate(status=OpportunityStatus.OPEN)
+    )
+
+    assert reopened.closed_at is None
+
+
+async def test_create_opportunity_rejects_a_blank_title(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+
+    with pytest.raises(service.OpportunityValidationError):
+        await service.create_opportunity(
+            session, OpportunityCreate(contact_id=contact.id, title="   ", owner="Sam")
+        )
+
+
+async def test_update_opportunity_rejects_a_blank_owner(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+    opportunity = await service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    with pytest.raises(service.OpportunityValidationError):
+        await service.update_opportunity(session, opportunity.id, OpportunityUpdate(owner="  "))
