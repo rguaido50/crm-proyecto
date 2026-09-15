@@ -17,29 +17,24 @@ app.include_router(contacts_api_router)
 app.include_router(contacts_views_router)
 
 
-def _is_api_request(request: Request) -> bool:
-    return request.url.path.startswith("/api/")
+def _domain_error_response(request: Request, status_code: int, detail: str) -> Response:
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=status_code, content={"detail": detail})
+    return RedirectResponse(url="/contacts", status_code=303)
 
 
 @app.exception_handler(NotFoundError)
 async def handle_not_found(request: Request, exc: NotFoundError) -> Response:
-    if _is_api_request(request):
-        return JSONResponse(status_code=404, content={"detail": "Not found"})
-    return RedirectResponse(url="/contacts", status_code=303)
+    return _domain_error_response(request, 404, "Not found")
 
 
 @app.exception_handler(HasDependentsError)
 async def handle_has_dependents(request: Request, exc: HasDependentsError) -> Response:
-    if _is_api_request(request):
-        return JSONResponse(
-            status_code=409,
-            content={"detail": "Cannot delete: it still has dependent records"},
-        )
-    return RedirectResponse(url="/contacts", status_code=303)
+    return _domain_error_response(
+        request, 409, "Cannot delete: it still has dependent records"
+    )
 
 
 @app.exception_handler(ValidationError)
 async def handle_validation_error(request: Request, exc: ValidationError) -> Response:
-    if _is_api_request(request):
-        return JSONResponse(status_code=422, content={"detail": str(exc)})
-    return RedirectResponse(url="/contacts", status_code=303)
+    return _domain_error_response(request, 422, str(exc))

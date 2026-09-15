@@ -37,13 +37,7 @@ async def create_contact_form(
 ) -> RedirectResponse:
     await service.create_contact(
         session,
-        ContactCreate(
-            name=name,
-            company=company or None,
-            email=email or None,
-            phone=phone or None,
-            notes=notes or None,
-        ),
+        ContactCreate(name=name, company=company, email=email, phone=phone, notes=notes),
     )
     return RedirectResponse(url="/contacts", status_code=303)
 
@@ -61,13 +55,7 @@ async def update_contact_form(
     await service.update_contact(
         session,
         contact_id,
-        ContactUpdate(
-            name=name,
-            company=company or None,
-            email=email or None,
-            phone=phone or None,
-            notes=notes or None,
-        ),
+        ContactUpdate(name=name, company=company, email=email, phone=phone, notes=notes),
     )
     return RedirectResponse(url=f"/contacts/{contact_id}", status_code=303)
 

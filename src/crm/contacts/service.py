@@ -19,8 +19,17 @@ class ContactValidationError(ValidationError):
     pass
 
 
+def _normalize(data: dict[str, str | None]) -> dict[str, str | None]:
+    normalized: dict[str, str | None] = {}
+    for field, value in data.items():
+        normalized[field] = (value.strip() or None) if value is not None else None
+    if "name" in normalized and not normalized["name"]:
+        raise ContactValidationError("name cannot be empty")
+    return normalized
+
+
 async def create_contact(session: AsyncSession, data: ContactCreate) -> Contact:
-    contact = Contact(**data.model_dump())
+    contact = Contact(**_normalize(data.model_dump()))
     session.add(contact)
     await session.commit()
     await session.refresh(contact)
@@ -41,9 +50,7 @@ async def list_contacts(session: AsyncSession) -> list[Contact]:
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:
     contact = await get_contact(session, contact_id)
-    updates = data.model_dump(exclude_unset=True)
-    if "name" in updates and not updates["name"]:
-        raise ContactValidationError("name cannot be empty")
+    updates = _normalize(data.model_dump(exclude_unset=True))
     for field, value in updates.items():
         setattr(contact, field, value)
     await session.commit()
