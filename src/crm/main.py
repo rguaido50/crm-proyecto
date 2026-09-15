@@ -25,9 +25,7 @@ def _is_api_request(request: Request) -> bool:
 async def handle_not_found(request: Request, exc: NotFoundError) -> Response:
     if _is_api_request(request):
         return JSONResponse(status_code=404, content={"detail": "Not found"})
-    return RedirectResponse(
-        url=request.headers.get("referer") or "/contacts", status_code=303
-    )
+    return RedirectResponse(url=request.headers.get("referer") or "/contacts", status_code=303)
 
 
 @app.exception_handler(HasDependentsError)
@@ -37,6 +35,4 @@ async def handle_has_dependents(request: Request, exc: HasDependentsError) -> Re
             status_code=409,
             content={"detail": "Cannot delete: it still has dependent records"},
         )
-    return RedirectResponse(
-        url=request.headers.get("referer") or "/contacts", status_code=303
-    )
+    return RedirectResponse(url=request.headers.get("referer") or "/contacts", status_code=303)
