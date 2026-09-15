@@ -8,6 +8,7 @@ from crm.core.db import Base
 
 class Contact(Base):
     __tablename__ = "contacts"
+    __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]

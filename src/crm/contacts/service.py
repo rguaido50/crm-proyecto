@@ -54,9 +54,7 @@ async def list_contacts(session: AsyncSession) -> list[Contact]:
         .correlate(Contact)
         .scalar_subquery()
     )
-    result = await session.execute(
-        select(Contact, open_opportunities_count).order_by(Contact.name)
-    )
+    result = await session.execute(select(Contact, open_opportunities_count).order_by(Contact.name))
     contacts = []
     for contact, count in result.all():
         contact.open_opportunities_count = count
