@@ -12,7 +12,7 @@
       {% for opp in opportunities %}
       <a href="/opportunities/{{ opp.id }}/edit" class="card text-decoration-none text-body p-2">
         <div class="fw-semibold">{{ opp.contact.company or opp.contact.name }}</div>
-        <div>{{ "$%.2f"|format(opp.value_usd) if opp.value_usd is not none else "—" }}</div>
+        <div>{{ opp.value_usd|currency }}</div>
         <div class="text-muted small">{{ opp.owner }}</div>
       </a>
       {% else %}

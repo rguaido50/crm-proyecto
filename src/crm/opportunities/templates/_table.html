@@ -14,7 +14,7 @@
       <td><a href="/opportunities/{{ opp.id }}/edit">{{ opp.title }}</a></td>
       <td>{{ opp.stage.value }}</td>
       <td>{{ opp.status.value }}</td>
-      <td>{{ "$%.2f"|format(opp.value_usd) if opp.value_usd is not none else "—" }}</td>
+      <td>{{ opp.value_usd|currency }}</td>
       <td>{{ opp.owner }}</td>
     </tr>
     {% else %}
