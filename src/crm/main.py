@@ -30,9 +30,7 @@ async def handle_not_found(request: Request, exc: NotFoundError) -> Response:
 
 @app.exception_handler(HasDependentsError)
 async def handle_has_dependents(request: Request, exc: HasDependentsError) -> Response:
-    return _domain_error_response(
-        request, 409, "Cannot delete: it still has dependent records"
-    )
+    return _domain_error_response(request, 409, "Cannot delete: it still has dependent records")
 
 
 @app.exception_handler(ValidationError)
