@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -152,3 +154,34 @@ async def test_update_opportunity_rejects_a_blank_owner(session: AsyncSession) -
 
     with pytest.raises(service.OpportunityValidationError):
         await service.update_opportunity(session, opportunity.id, OpportunityUpdate(owner="  "))
+
+
+async def test_create_opportunity_rejects_a_value_usd_that_overflows_the_column(
+    session: AsyncSession,
+) -> None:
+    contact = await _make_contact(session)
+
+    with pytest.raises(service.OpportunityValidationError):
+        await service.create_opportunity(
+            session,
+            OpportunityCreate(
+                contact_id=contact.id,
+                title="Deal",
+                owner="Sam",
+                value_usd=Decimal("99999999999999"),
+            ),
+        )
+
+
+async def test_update_opportunity_rejects_a_value_usd_that_overflows_the_column(
+    session: AsyncSession,
+) -> None:
+    contact = await _make_contact(session)
+    opportunity = await service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    with pytest.raises(service.OpportunityValidationError):
+        await service.update_opportunity(
+            session, opportunity.id, OpportunityUpdate(value_usd=Decimal("99999999999999"))
+        )

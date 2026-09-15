@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -25,9 +25,9 @@ async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> 
     session.add(opportunity)
     try:
         await session.commit()
-    except IntegrityError as exc:
+    except DBAPIError as exc:
         await session.rollback()
-        raise OpportunityValidationError("invalid contact_id") from exc
+        raise OpportunityValidationError("invalid opportunity data") from exc
     await session.refresh(opportunity)
     return opportunity
 
@@ -82,6 +82,10 @@ async def update_opportunity(
 
     for field, value in updates.items():
         setattr(opportunity, field, value)
-    await session.commit()
+    try:
+        await session.commit()
+    except DBAPIError as exc:
+        await session.rollback()
+        raise OpportunityValidationError("invalid opportunity data") from exc
     await session.refresh(opportunity)
     return opportunity
