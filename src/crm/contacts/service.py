@@ -1,10 +1,11 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
+from crm.opportunities.models import Opportunity, OpportunityStatus
 
 
 class ContactNotFoundError(NotFoundError):
@@ -44,8 +45,23 @@ async def get_contact(session: AsyncSession, contact_id: int) -> Contact:
 
 
 async def list_contacts(session: AsyncSession) -> list[Contact]:
-    result = await session.execute(select(Contact).order_by(Contact.name))
-    return list(result.scalars().all())
+    open_opportunities_count = (
+        select(func.count(Opportunity.id))
+        .where(
+            Opportunity.contact_id == Contact.id,
+            Opportunity.status == OpportunityStatus.OPEN,
+        )
+        .correlate(Contact)
+        .scalar_subquery()
+    )
+    result = await session.execute(
+        select(Contact, open_opportunities_count).order_by(Contact.name)
+    )
+    contacts = []
+    for contact, count in result.all():
+        contact.open_opportunities_count = count
+        contacts.append(contact)
+    return contacts
 
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:

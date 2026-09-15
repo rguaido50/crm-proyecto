@@ -19,3 +19,6 @@ class Contact(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    # Not a column — annotated onto each row by list_contacts(), for the list view only.
+    open_opportunities_count: int | None = None
