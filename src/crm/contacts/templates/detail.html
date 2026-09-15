@@ -3,6 +3,9 @@
 {% block title %}{{ contact.name }}{% endblock %}
 
 {% block content %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1>{{ contact.name }}</h1>

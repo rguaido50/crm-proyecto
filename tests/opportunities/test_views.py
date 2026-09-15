@@ -83,8 +83,22 @@ async def test_create_opportunity_form_with_a_blank_title_redirects_to_the_conta
     )
 
     assert response.status_code == 303
-    assert response.headers["location"] == f"/contacts/{contact.id}"
+    assert response.headers["location"].startswith(f"/contacts/{contact.id}?error=")
     assert await service.list_for_contact(session, contact.id) == []
+
+
+async def test_create_opportunity_form_error_message_renders_on_the_contact_page(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    create_response = await client.post(
+        "/opportunities", data={"contact_id": contact.id, "title": "   ", "owner": "Sam"}
+    )
+
+    response = await client.get(create_response.headers["location"])
+
+    assert response.status_code == 200
+    assert "cannot be empty" in response.text
 
 
 async def test_update_opportunity_form_redirects_to_the_contact_detail_page(

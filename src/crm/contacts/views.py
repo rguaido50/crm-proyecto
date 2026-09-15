@@ -21,12 +21,17 @@ async def list_contacts_page(
 
 @router.get("/contacts/{contact_id}", response_class=HTMLResponse)
 async def contact_detail_page(
-    contact_id: int, request: Request, session: AsyncSession = Depends(get_session)
+    contact_id: int,
+    request: Request,
+    error: str | None = None,
+    session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     contact = await service.get_contact(session, contact_id)
     opportunities = await opportunities_service.list_for_contact(session, contact_id)
     return templates.TemplateResponse(
-        request, "detail.html", {"contact": contact, "opportunities": opportunities}
+        request,
+        "detail.html",
+        {"contact": contact, "opportunities": opportunities, "error": error},
     )
 
 
