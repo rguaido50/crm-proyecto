@@ -45,10 +45,10 @@ async def test_create_contact_form_stores_a_blank_optional_field_as_null(
     assert contacts[0].company is None
 
 
-async def test_create_contact_form_redirects_instead_of_500ing_for_a_blank_name(
+async def test_create_contact_form_redirects_instead_of_500ing_for_a_whitespace_name(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    response = await client.post("/contacts", data={"name": ""})
+    response = await client.post("/contacts", data={"name": "   "})
 
     assert response.status_code == 303
     assert await service.list_contacts(session) == []
