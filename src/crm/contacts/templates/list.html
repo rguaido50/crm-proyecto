@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Contacts{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Contacts</h1>
+  <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-contact-form">
+    + New Contact
+  </button>
+</div>
+
+<form id="new-contact-form" class="collapse card card-body mb-3" method="post" action="/contacts">
+  <div class="mb-2">
+    <label class="form-label" for="name">Name</label>
+    <input class="form-control" type="text" id="name" name="name" required>
+  </div>
+  <div class="mb-2">
+    <label class="form-label" for="company">Company</label>
+    <input class="form-control" type="text" id="company" name="company">
+  </div>
+  <div class="mb-2">
+    <label class="form-label" for="email">Email</label>
+    <input class="form-control" type="email" id="email" name="email">
+  </div>
+  <div class="mb-2">
+    <label class="form-label" for="phone">Phone</label>
+    <input class="form-control" type="text" id="phone" name="phone">
+  </div>
+  <div class="mb-2">
+    <label class="form-label" for="notes">Notes</label>
+    <textarea class="form-control" id="notes" name="notes"></textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Create Contact</button>
+</form>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Company</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for contact in contacts %}
+    <tr>
+      <td><a href="/contacts/{{ contact.id }}">{{ contact.name }}</a></td>
+      <td>{{ contact.company or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
