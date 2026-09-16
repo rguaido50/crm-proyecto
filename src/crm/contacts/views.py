@@ -7,6 +7,7 @@ from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.db import get_session
 from crm.core.templates import templates
 from crm.opportunities import service as opportunities_service
+from crm.tasks import service as tasks_service
 
 router = APIRouter(tags=["contacts-views"])
 
@@ -28,10 +29,18 @@ async def contact_detail_page(
 ) -> HTMLResponse:
     contact = await service.get_contact(session, contact_id)
     opportunities = await opportunities_service.list_for_contact(session, contact_id)
+    pending_tasks = await tasks_service.list_pending_for_contact(session, contact_id)
+    activity = await tasks_service.list_activity_for_contact(session, contact_id)
     return templates.TemplateResponse(
         request,
         "detail.html",
-        {"contact": contact, "opportunities": opportunities, "error": error},
+        {
+            "contact": contact,
+            "opportunities": opportunities,
+            "pending_tasks": pending_tasks,
+            "activity": activity,
+            "error": error,
+        },
     )
 
 

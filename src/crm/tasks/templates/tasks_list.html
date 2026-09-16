@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Tasks</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Type</th>
+      <th>Contact</th>
+      <th>Due date</th>
+      <th>Owner</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td><a href="/contacts/{{ task.contact_id }}">{{ task.title }}</a></td>
+      <td>{{ task.type.value }}</td>
+      <td>{{ task.contact.name }}</td>
+      <td>{{ task.due_date or "—" }}</td>
+      <td>{{ task.owner }}</td>
+      <td>
+        {% if task.completed_at %}
+        <span class="badge text-bg-success">Done</span>
+        {% else %}
+        <span class="badge text-bg-secondary">Pending</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if not task.completed_at %}
+        <form method="post" action="/tasks/{{ task.id }}/complete">
+          <button class="btn btn-sm btn-outline-success" type="submit">Complete</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="text-muted">No tasks yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
