@@ -73,6 +73,22 @@ async def test_create_task_rejects_a_blank_title(session: AsyncSession) -> None:
         )
 
 
+async def test_create_task_rejects_an_invalid_opportunity_id(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+
+    with pytest.raises(service.TaskValidationError):
+        await service.create_task(
+            session,
+            TaskCreate(
+                contact_id=contact.id,
+                opportunity_id=999999,
+                title="Deal follow-up",
+                type=TaskType.EMAIL,
+                owner="Sam",
+            ),
+        )
+
+
 async def test_create_task_from_an_opportunity_overrides_a_mismatched_contact_id(
     session: AsyncSession,
 ) -> None:

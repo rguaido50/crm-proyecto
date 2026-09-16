@@ -1,6 +1,6 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -20,6 +20,10 @@ class TaskValidationError(ValidationError):
     pass
 
 
+def _due_date_nulls_last() -> tuple[ColumnElement[bool], ColumnElement[date | None]]:
+    return (Task.due_date.is_(None), Task.due_date)
+
+
 async def create_task(session: AsyncSession, data: TaskCreate) -> Task:
     fields = data.model_dump()
     fields["title"] = require_non_blank(fields["title"], "title", TaskValidationError)
@@ -27,7 +31,12 @@ async def create_task(session: AsyncSession, data: TaskCreate) -> Task:
     if fields["description"] is not None:
         fields["description"] = fields["description"].strip() or None
     if fields["opportunity_id"] is not None:
-        opportunity = await opportunities_service.get_opportunity(session, fields["opportunity_id"])
+        try:
+            opportunity = await opportunities_service.get_opportunity(
+                session, fields["opportunity_id"]
+            )
+        except opportunities_service.OpportunityNotFoundError as exc:
+            raise TaskValidationError("opportunity not found") from exc
         fields["contact_id"] = opportunity.contact_id
     task = Task(**fields)
     session.add(task)
@@ -51,11 +60,7 @@ async def list_tasks(session: AsyncSession) -> list[Task]:
     result = await session.execute(
         select(Task)
         .options(joinedload(Task.contact))
-        .order_by(
-            Task.completed_at.is_not(None),
-            Task.due_date.is_(None),
-            Task.due_date,
-        )
+        .order_by(Task.completed_at.is_not(None), *_due_date_nulls_last())
     )
     return list(result.scalars().all())
 
@@ -64,7 +69,7 @@ async def list_pending_for_contact(session: AsyncSession, contact_id: int) -> li
     result = await session.execute(
         select(Task)
         .where(Task.contact_id == contact_id, Task.completed_at.is_(None))
-        .order_by(Task.due_date.is_(None), Task.due_date)
+        .order_by(*_due_date_nulls_last())
     )
     return list(result.scalars().all())
 

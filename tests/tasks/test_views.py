@@ -73,9 +73,30 @@ async def test_create_task_form_from_an_opportunity_derives_the_contact(
     )
 
     assert response.status_code == 303
-    assert response.headers["location"] == f"/contacts/{other_contact.id}"
+    assert response.headers["location"] == f"/contacts/{real_contact.id}"
     real_contact_tasks = await service.list_pending_for_contact(session, real_contact.id)
     assert len(real_contact_tasks) == 1
+
+
+async def test_create_task_form_with_an_invalid_opportunity_id_redirects_with_an_error(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    response = await client.post(
+        "/tasks",
+        data={
+            "contact_id": contact.id,
+            "opportunity_id": 999999,
+            "title": "Deal follow-up",
+            "type": "email",
+            "owner": "Sam",
+        },
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith(f"/contacts/{contact.id}?error=")
+    assert await service.list_pending_for_contact(session, contact.id) == []
 
 
 async def test_create_task_form_with_a_blank_title_redirects_to_the_contact_with_an_error(
@@ -92,7 +113,7 @@ async def test_create_task_form_with_a_blank_title_redirects_to_the_contact_with
     assert await service.list_pending_for_contact(session, contact.id) == []
 
 
-async def test_complete_task_form_redirects_back_to_the_referring_page(
+async def test_complete_task_form_redirects_to_the_contact_detail_page(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
@@ -102,7 +123,7 @@ async def test_complete_task_form_redirects_back_to_the_referring_page(
     )
 
     response = await client.post(
-        f"/tasks/{task.id}/complete", headers={"referer": f"/contacts/{contact.id}"}
+        f"/tasks/{task.id}/complete", headers={"referer": "https://evil.example/phish"}
     )
 
     assert response.status_code == 303

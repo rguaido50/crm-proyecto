@@ -1,5 +1,4 @@
 from datetime import date
-from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,19 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.core.db import get_session
 from crm.core.errors import ValidationError
+from crm.core.redirects import contact_redirect
 from crm.core.templates import templates
 from crm.tasks import service
 from crm.tasks.models import TaskType
 from crm.tasks.schemas import TaskCreate
 
 router = APIRouter(tags=["tasks-views"])
-
-
-def _contact_redirect(contact_id: int, error: str | None) -> RedirectResponse:
-    url = f"/contacts/{contact_id}"
-    if error:
-        url += f"?error={quote(error)}"
-    return RedirectResponse(url=url, status_code=303)
 
 
 @router.get("/tasks", response_class=HTMLResponse)
@@ -42,8 +35,9 @@ async def create_task_form(
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     error = None
+    redirect_contact_id = contact_id
     try:
-        await service.create_task(
+        task = await service.create_task(
             session,
             TaskCreate(
                 contact_id=contact_id,
@@ -55,14 +49,15 @@ async def create_task_form(
                 owner=owner,
             ),
         )
+        redirect_contact_id = task.contact_id
     except ValidationError as exc:
         error = str(exc)
-    return _contact_redirect(contact_id, error)
+    return contact_redirect(redirect_contact_id, error)
 
 
 @router.post("/tasks/{task_id}/complete", response_class=RedirectResponse)
 async def complete_task_form(
-    task_id: int, request: Request, session: AsyncSession = Depends(get_session)
+    task_id: int, session: AsyncSession = Depends(get_session)
 ) -> RedirectResponse:
-    await service.complete_task(session, task_id)
-    return RedirectResponse(url=request.headers.get("referer", "/tasks"), status_code=303)
+    task = await service.complete_task(session, task_id)
+    return contact_redirect(task.contact_id, None)
