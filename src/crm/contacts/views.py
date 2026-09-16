@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from crm.contacts import service
 from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.db import get_session
-from crm.core.errors import HasDependentsError, ValidationError
+from crm.core.errors import HAS_DEPENDENTS_MESSAGE, HasDependentsError, ValidationError
 from crm.core.responses import redirect_with_error
 from crm.core.templates import templates
 from crm.opportunities import service as opportunities_service
@@ -74,7 +74,7 @@ async def delete_contact_form(
     try:
         await service.delete_contact(session, contact_id)
     except HasDependentsError:
-        error = "Cannot delete: it still has dependent records"
+        error = HAS_DEPENDENTS_MESSAGE
     if error:
         return redirect_with_error(f"/contacts/{contact_id}", error)
     return RedirectResponse(url="/contacts", status_code=303)
