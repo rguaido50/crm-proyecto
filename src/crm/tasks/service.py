@@ -27,9 +27,7 @@ async def create_task(session: AsyncSession, data: TaskCreate) -> Task:
     if fields["description"] is not None:
         fields["description"] = fields["description"].strip() or None
     if fields["opportunity_id"] is not None:
-        opportunity = await opportunities_service.get_opportunity(
-            session, fields["opportunity_id"]
-        )
+        opportunity = await opportunities_service.get_opportunity(session, fields["opportunity_id"])
         fields["contact_id"] = opportunity.contact_id
     task = Task(**fields)
     session.add(task)
