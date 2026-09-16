@@ -82,3 +82,47 @@ async def test_create_contact_form_redirects_instead_of_500ing_for_a_whitespace_
 
     assert response.status_code == 303
     assert await service.list_contacts(session) == []
+
+
+async def test_create_contact_form_with_a_blank_name_shows_an_error_on_the_contacts_page(
+    client: AsyncClient,
+) -> None:
+    create_response = await client.post("/contacts", data={"name": "   "})
+
+    assert create_response.headers["location"].startswith("/contacts?error=")
+    response = await client.get(create_response.headers["location"])
+
+    assert response.status_code == 200
+    assert "cannot be empty" in response.text
+
+
+async def test_update_contact_form_with_a_blank_name_shows_an_error_on_the_contact_page(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    update_response = await client.post(f"/contacts/{contact.id}/edit", data={"name": "   "})
+
+    assert update_response.headers["location"].startswith(f"/contacts/{contact.id}?error=")
+    response = await client.get(update_response.headers["location"])
+
+    assert response.status_code == 200
+    assert "cannot be empty" in response.text
+
+
+async def test_delete_contact_form_with_dependents_shows_an_error_on_the_contact_page(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    delete_response = await client.post(f"/contacts/{contact.id}/delete")
+
+    assert delete_response.headers["location"].startswith(f"/contacts/{contact.id}?error=")
+    response = await client.get(delete_response.headers["location"])
+
+    assert response.status_code == 200
+    assert "dependent" in response.text
+    assert await service.get_contact(session, contact.id) is not None

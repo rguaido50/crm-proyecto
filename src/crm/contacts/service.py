@@ -52,6 +52,11 @@ async def get_contact(session: AsyncSession, contact_id: int) -> Contact:
 
 
 async def list_contacts(session: AsyncSession) -> list[Contact]:
+    result = await session.execute(select(Contact).order_by(Contact.name))
+    return list(result.scalars().all())
+
+
+async def list_contacts_with_open_counts(session: AsyncSession) -> list[tuple[Contact, int]]:
     open_opportunities_count = (
         select(func.count(Opportunity.id))
         .where(
@@ -62,14 +67,7 @@ async def list_contacts(session: AsyncSession) -> list[Contact]:
         .scalar_subquery()
     )
     result = await session.execute(select(Contact, open_opportunities_count).order_by(Contact.name))
-    contacts = []
-    for contact, count in result.all():
-        # Not a mapped column — a transient attribute for list.html only, set fresh on
-        # every call. Don't read it off a Contact fetched any other way (get_contact,
-        # update_contact): it won't be there.
-        contact.open_opportunities_count = count  # type: ignore[attr-defined]
-        contacts.append(contact)
-    return contacts
+    return list(result.all())
 
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:

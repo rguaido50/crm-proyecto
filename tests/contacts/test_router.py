@@ -1,4 +1,10 @@
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from crm.contacts import service
+from crm.contacts.schemas import ContactCreate
+from crm.opportunities import service as opportunities_service
+from crm.opportunities.schemas import OpportunityCreate
 
 
 async def test_create_contact_returns_201_with_the_created_row(client: AsyncClient) -> None:
@@ -26,3 +32,17 @@ async def test_update_contact_rejects_an_explicit_null_name(client: AsyncClient)
     response = await client.patch(f"/api/contacts/{created.json()['id']}", json={"name": None})
 
     assert response.status_code == 422
+
+
+async def test_delete_contact_returns_409_when_it_has_opportunities(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    response = await client.delete(f"/api/contacts/{contact.id}")
+
+    assert response.status_code == 409
+    assert await service.get_contact(session, contact.id) is not None
