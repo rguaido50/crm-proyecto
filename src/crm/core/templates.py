@@ -10,6 +10,7 @@ templates = Jinja2Templates(
         CRM_DIR / "templates",
         CRM_DIR / "contacts" / "templates",
         CRM_DIR / "opportunities" / "templates",
+        CRM_DIR / "tasks" / "templates",
     ]
 )
 

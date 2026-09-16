@@ -1,0 +1,22 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Type</th>
+      <th>Completed</th>
+      <th>Owner</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in activity %}
+    <tr>
+      <td>{{ task.title }}</td>
+      <td>{{ task.type.value }}</td>
+      <td>{{ task.completed_at.strftime("%Y-%m-%d") }}</td>
+      <td>{{ task.owner }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-muted">No activity yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
