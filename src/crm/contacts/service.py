@@ -67,7 +67,7 @@ async def list_contacts_with_open_counts(session: AsyncSession) -> list[tuple[Co
         .scalar_subquery()
     )
     result = await session.execute(select(Contact, open_opportunities_count).order_by(Contact.name))
-    return list(result.all())
+    return list(result.tuples().all())
 
 
 async def update_contact(session: AsyncSession, contact_id: int, data: ContactUpdate) -> Contact:
