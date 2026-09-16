@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.core.db import get_session
 from crm.core.errors import ValidationError
-from crm.core.redirects import contact_redirect
+from crm.core.responses import redirect_with_error
 from crm.core.templates import templates
 from crm.tasks import service
 from crm.tasks.models import TaskType
@@ -52,7 +52,7 @@ async def create_task_form(
         redirect_contact_id = task.contact_id
     except ValidationError as exc:
         error = str(exc)
-    return contact_redirect(redirect_contact_id, error)
+    return redirect_with_error(f"/contacts/{redirect_contact_id}", error)
 
 
 @router.post("/tasks/{task_id}/complete", response_class=RedirectResponse)
@@ -60,4 +60,4 @@ async def complete_task_form(
     task_id: int, session: AsyncSession = Depends(get_session)
 ) -> RedirectResponse:
     task = await service.complete_task(session, task_id)
-    return contact_redirect(task.contact_id, None)
+    return redirect_with_error(f"/contacts/{task.contact_id}", None)

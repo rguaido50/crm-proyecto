@@ -137,6 +137,27 @@ async def test_update_opportunity_clears_closed_at_when_reopened(session: AsyncS
     assert reopened.closed_at is None
 
 
+async def test_update_opportunity_keeps_the_original_closed_at_on_a_closed_to_closed_change(
+    session: AsyncSession,
+) -> None:
+    # CONTEXT.md: closed_at records "the moment [the opportunity] closed" — the first
+    # time it left OPEN. A later closed-to-closed change (WON<->LOST) isn't a new closing.
+    contact = await _make_contact(session)
+    opportunity = await service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+    lost = await service.update_opportunity(
+        session, opportunity.id, OpportunityUpdate(status=OpportunityStatus.LOST)
+    )
+    assert lost.closed_at is not None
+
+    won = await service.update_opportunity(
+        session, opportunity.id, OpportunityUpdate(status=OpportunityStatus.WON)
+    )
+
+    assert won.closed_at == lost.closed_at
+
+
 async def test_create_opportunity_rejects_a_blank_title(session: AsyncSession) -> None:
     contact = await _make_contact(session)
 

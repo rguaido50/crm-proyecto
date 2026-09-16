@@ -3,6 +3,9 @@
 {% block title %}Contacts{% endblock %}
 
 {% block content %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1>Contacts</h1>
   <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-contact-form">
@@ -43,11 +46,11 @@
     </tr>
   </thead>
   <tbody>
-    {% for contact in contacts %}
+    {% for contact, open_opportunities_count in contacts %}
     <tr>
       <td><a href="/contacts/{{ contact.id }}">{{ contact.name }}</a></td>
       <td>{{ contact.company or "" }}</td>
-      <td>{{ contact.open_opportunities_count }}</td>
+      <td>{{ open_opportunities_count }}</td>
     </tr>
     {% endfor %}
   </tbody>

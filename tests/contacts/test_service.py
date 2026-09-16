@@ -44,7 +44,7 @@ async def test_list_contacts_returns_every_contact(session: AsyncSession) -> Non
     assert names == {"Ada Lovelace", "Grace Hopper"}
 
 
-async def test_list_contacts_returns_the_correct_open_opportunity_count(
+async def test_list_contacts_with_open_counts_returns_the_correct_open_opportunity_count(
     session: AsyncSession,
 ) -> None:
     contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
@@ -58,9 +58,10 @@ async def test_list_contacts_returns_the_correct_open_opportunity_count(
         session, closed_deal.id, OpportunityUpdate(status=OpportunityStatus.WON)
     )
 
-    contacts = await service.list_contacts(session)
+    contacts = await service.list_contacts_with_open_counts(session)
 
-    assert contacts[0].open_opportunities_count == 1
+    _, open_count = contacts[0]
+    assert open_count == 1
 
 
 async def test_update_contact_changes_only_the_given_fields(session: AsyncSession) -> None:

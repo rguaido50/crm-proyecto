@@ -3,6 +3,9 @@
 {% block title %}Pipeline{% endblock %}
 
 {% block content %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
 <h1 class="mb-3">Pipeline</h1>
 <div class="d-flex gap-3" style="overflow-x: auto;">
   {% for stage, opportunities in board.items() %}

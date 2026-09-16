@@ -1,12 +1,20 @@
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from crm.contacts.router import router as contacts_api_router
 from crm.contacts.views import router as contacts_views_router
-from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
+from crm.core.errors import (
+    HAS_DEPENDENTS_MESSAGE,
+    HasDependentsError,
+    NotFoundError,
+    ValidationError,
+)
+from crm.core.responses import redirect_with_error
 from crm.opportunities.router import router as opportunities_api_router
 from crm.opportunities.views import router as opportunities_views_router
 from crm.tasks.router import router as tasks_api_router
@@ -28,7 +36,7 @@ app.include_router(tasks_views_router)
 def _domain_error_response(request: Request, status_code: int, detail: str) -> Response:
     if request.url.path.startswith("/api/"):
         return JSONResponse(status_code=status_code, content={"detail": detail})
-    return RedirectResponse(url="/contacts", status_code=303)
+    return redirect_with_error("/contacts", detail)
 
 
 @app.exception_handler(NotFoundError)
@@ -38,9 +46,18 @@ async def handle_not_found(request: Request, exc: NotFoundError) -> Response:
 
 @app.exception_handler(HasDependentsError)
 async def handle_has_dependents(request: Request, exc: HasDependentsError) -> Response:
-    return _domain_error_response(request, 409, "Cannot delete: it still has dependent records")
+    return _domain_error_response(request, 409, HAS_DEPENDENTS_MESSAGE)
 
 
 @app.exception_handler(ValidationError)
 async def handle_validation_error(request: Request, exc: ValidationError) -> Response:
     return _domain_error_response(request, 422, str(exc))
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_request_validation_error(
+    request: Request, exc: RequestValidationError
+) -> Response:
+    if request.url.path.startswith("/api/"):
+        return await request_validation_exception_handler(request, exc)
+    return redirect_with_error("/contacts", "Invalid input")

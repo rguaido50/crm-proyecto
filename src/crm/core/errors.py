@@ -8,3 +8,6 @@ class HasDependentsError(Exception):
 
 class ValidationError(Exception):
     pass
+
+
+HAS_DEPENDENTS_MESSAGE = "Cannot delete: it still has dependent records"

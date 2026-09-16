@@ -101,6 +101,40 @@ async def test_create_opportunity_form_error_message_renders_on_the_contact_page
     assert "cannot be empty" in response.text
 
 
+async def test_edit_opportunity_page_with_a_missing_id_redirects_to_the_pipeline(
+    client: AsyncClient,
+) -> None:
+    response = await client.get("/opportunities/999999/edit")
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/pipeline?error=")
+
+
+async def test_update_opportunity_form_with_a_missing_id_redirects_to_the_pipeline(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/opportunities/999999/edit",
+        data={"title": "Deal", "stage": "qualified", "status": "open", "owner": "Sam"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/pipeline?error=")
+
+
+async def test_create_opportunity_form_with_a_malformed_value_usd_redirects_instead_of_500ing(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    contact = await contacts_service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+
+    response = await client.post(
+        "/opportunities",
+        data={"contact_id": contact.id, "title": "Deal", "owner": "Sam", "value_usd": "abc"},
+    )
+
+    assert response.status_code == 303
+
+
 async def test_update_opportunity_form_redirects_to_the_contact_detail_page(
     client: AsyncClient, session: AsyncSession
 ) -> None:
