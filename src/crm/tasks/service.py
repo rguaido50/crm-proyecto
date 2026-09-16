@@ -1,4 +1,5 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import ColumnElement, select
 from sqlalchemy.exc import DBAPIError
@@ -20,7 +21,7 @@ class TaskValidationError(ValidationError):
     pass
 
 
-def _due_date_nulls_last() -> tuple[ColumnElement[bool], ColumnElement[date | None]]:
+def _due_date_nulls_last() -> tuple[ColumnElement[Any], ColumnElement[Any]]:
     return (Task.due_date.is_(None), Task.due_date)
 
 
