@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.core.db import get_session
@@ -23,10 +23,12 @@ async def pipeline_page(
     return templates.TemplateResponse(request, "pipeline.html", {"board": board, "error": error})
 
 
-@router.get("/opportunities/{opportunity_id}/edit", response_class=HTMLResponse)
+@router.get(
+    "/opportunities/{opportunity_id}/edit", response_class=HTMLResponse, response_model=None
+)
 async def edit_opportunity_page(
     opportunity_id: int, request: Request, session: AsyncSession = Depends(get_session)
-) -> HTMLResponse | RedirectResponse:
+) -> Response:
     try:
         opportunity = await service.get_opportunity(session, opportunity_id)
     except NotFoundError:
