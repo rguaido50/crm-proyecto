@@ -27,7 +27,7 @@ async def list_tasks_page(
     request: Request, session: AsyncSession = Depends(get_session)
 ) -> HTMLResponse:
     tasks = await service.list_tasks(session)
-    return templates.TemplateResponse(request, "list.html", {"tasks": tasks})
+    return templates.TemplateResponse(request, "tasks_list.html", {"tasks": tasks})
 
 
 @router.post("/tasks", response_class=RedirectResponse)

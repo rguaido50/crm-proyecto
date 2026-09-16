@@ -1,4 +1,6 @@
-from sqlalchemy import func, select
+from datetime import UTC, datetime
+
+from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -80,7 +82,7 @@ async def list_activity_for_contact(session: AsyncSession, contact_id: int) -> l
 
 async def complete_task(session: AsyncSession, task_id: int) -> Task:
     task = await get_task(session, task_id)
-    task.completed_at = func.now()
+    task.completed_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(task)
     return task
