@@ -1,0 +1,28 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Type</th>
+      <th>Due date</th>
+      <th>Owner</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in pending_tasks %}
+    <tr>
+      <td>{{ task.title }}</td>
+      <td>{{ task.type.value }}</td>
+      <td>{{ task.due_date or "—" }}</td>
+      <td>{{ task.owner }}</td>
+      <td>
+        <form method="post" action="/tasks/{{ task.id }}/complete">
+          <button class="btn btn-sm btn-outline-success" type="submit">Complete</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-muted">No pending tasks.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

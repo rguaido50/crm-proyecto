@@ -88,12 +88,55 @@
 </section>
 
 <section class="mb-4">
-  <h2 class="h5">Pending tasks</h2>
-  <p class="text-muted">No pending tasks.</p>
+  <div class="d-flex justify-content-between align-items-center">
+    <h2 class="h5">Pending tasks</h2>
+    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-task-form">
+      + New Task
+    </button>
+  </div>
+  <form id="new-task-form" class="collapse card card-body mb-3" method="post" action="/tasks">
+    <input type="hidden" name="contact_id" value="{{ contact.id }}">
+    <div class="mb-2">
+      <label class="form-label" for="task-title">Title</label>
+      <input class="form-control" type="text" id="task-title" name="title" required>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="task-type">Type</label>
+      <select class="form-select" id="task-type" name="type" required>
+        <option value="call">Call</option>
+        <option value="meeting">Meeting</option>
+        <option value="email">Email</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="task-opportunity">Opportunity</label>
+      <select class="form-select" id="task-opportunity" name="opportunity_id">
+        <option value="">—</option>
+        {% for opp in opportunities %}
+        <option value="{{ opp.id }}">{{ opp.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="task-due-date">Due date</label>
+      <input class="form-control" type="date" id="task-due-date" name="due_date">
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="task-owner">Owner</label>
+      <input class="form-control" type="text" id="task-owner" name="owner" required>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="task-description">Description</label>
+      <textarea class="form-control" id="task-description" name="description"></textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Create Task</button>
+  </form>
+  {% include "_pending.html" %}
 </section>
 
 <section class="mb-4">
   <h2 class="h5">Activity history</h2>
-  <p class="text-muted">No activity yet.</p>
+  {% include "_activity.html" %}
 </section>
 {% endblock %}
