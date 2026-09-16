@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 CRM_DIR = Path(__file__).resolve().parent.parent
 
+
 def _module_template_dirs(base_dir: Path = CRM_DIR) -> list[Path]:
     dirs = sorted(base_dir.glob("*/templates"))
     seen: dict[str, Path] = {}
