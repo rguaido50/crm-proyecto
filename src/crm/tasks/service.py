@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
-from typing import Any
 
-from sqlalchemy import ColumnElement, select
+from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -21,7 +20,7 @@ class TaskValidationError(ValidationError):
     pass
 
 
-def _due_date_nulls_last() -> tuple[ColumnElement[Any], ColumnElement[Any]]:
+def _due_date_nulls_last():
     return (Task.due_date.is_(None), Task.due_date)
 
 
