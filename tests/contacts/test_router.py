@@ -38,11 +38,12 @@ async def test_delete_contact_returns_409_when_it_has_opportunities(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    contact_id = contact.id
     await opportunities_service.create_opportunity(
-        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+        session, OpportunityCreate(contact_id=contact_id, title="Deal", owner="Sam")
     )
 
-    response = await client.delete(f"/api/contacts/{contact.id}")
+    response = await client.delete(f"/api/contacts/{contact_id}")
 
     assert response.status_code == 409
-    assert await service.get_contact(session, contact.id) is not None
+    assert await service.get_contact(session, contact_id) is not None

@@ -1,8 +1,9 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
+from crm.core.validation import blank_to_none
 from crm.opportunities.models import OpportunityStage, OpportunityStatus
 
 
@@ -15,6 +16,11 @@ class OpportunityCreate(BaseModel):
     expected_close_date: date | None = None
     owner: str
 
+    _blank_value_usd = field_validator("value_usd", mode="before")(blank_to_none)
+    _blank_expected_close_date = field_validator("expected_close_date", mode="before")(
+        blank_to_none
+    )
+
 
 class OpportunityUpdate(BaseModel):
     title: str | None = None
@@ -23,6 +29,11 @@ class OpportunityUpdate(BaseModel):
     status: OpportunityStatus | None = None
     expected_close_date: date | None = None
     owner: str | None = None
+
+    _blank_value_usd = field_validator("value_usd", mode="before")(blank_to_none)
+    _blank_expected_close_date = field_validator("expected_close_date", mode="before")(
+        blank_to_none
+    )
 
 
 class OpportunityRead(BaseModel):

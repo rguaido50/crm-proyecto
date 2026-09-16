@@ -114,15 +114,16 @@ async def test_delete_contact_form_with_dependents_shows_an_error_on_the_contact
     client: AsyncClient, session: AsyncSession
 ) -> None:
     contact = await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    contact_id = contact.id
     await opportunities_service.create_opportunity(
-        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+        session, OpportunityCreate(contact_id=contact_id, title="Deal", owner="Sam")
     )
 
-    delete_response = await client.post(f"/contacts/{contact.id}/delete")
+    delete_response = await client.post(f"/contacts/{contact_id}/delete")
 
-    assert delete_response.headers["location"].startswith(f"/contacts/{contact.id}?error=")
+    assert delete_response.headers["location"].startswith(f"/contacts/{contact_id}?error=")
     response = await client.get(delete_response.headers["location"])
 
     assert response.status_code == 200
     assert "dependent" in response.text
-    assert await service.get_contact(session, contact.id) is not None
+    assert await service.get_contact(session, contact_id) is not None
