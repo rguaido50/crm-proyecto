@@ -64,6 +64,26 @@ async def test_list_contacts_with_open_counts_returns_the_correct_open_opportuni
     assert open_count == 1
 
 
+async def test_list_contacts_with_open_counts_scopes_the_count_per_contact(
+    session: AsyncSession,
+) -> None:
+    zara = await service.create_contact(session, ContactCreate(name="Zara Khan"))
+    await service.create_contact(session, ContactCreate(name="Ada Lovelace"))
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=zara.id, title="Zara's deal 1", owner="Sam")
+    )
+    await opportunities_service.create_opportunity(
+        session, OpportunityCreate(contact_id=zara.id, title="Zara's deal 2", owner="Sam")
+    )
+
+    contacts = await service.list_contacts_with_open_counts(session)
+
+    assert [(contact.name, count) for contact, count in contacts] == [
+        ("Ada Lovelace", 0),
+        ("Zara Khan", 2),
+    ]
+
+
 async def test_update_contact_changes_only_the_given_fields(session: AsyncSession) -> None:
     created = await service.create_contact(
         session, ContactCreate(name="Ada Lovelace", company="Acme")
@@ -92,5 +112,5 @@ async def test_delete_contact_is_refused_when_it_has_opportunities(
         session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
     )
 
-    with pytest.raises(service.ContactHasDependentsError):
+    with pytest.raises(service.ContactHasDependentsError, match=f"^{contact.id}$"):
         await service.delete_contact(session, contact.id)
