@@ -11,3 +11,6 @@ wheels/
 
 # Session handoff notes — local only
 handoffs/
+
+# Secrets — never committed, see .env.example
+.env
