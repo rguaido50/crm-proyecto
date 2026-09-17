@@ -57,7 +57,7 @@ async def test_create_task_stores_a_blank_description_as_null(session: AsyncSess
 
 
 async def test_create_task_rejects_an_invalid_contact_id(session: AsyncSession) -> None:
-    with pytest.raises(service.TaskValidationError):
+    with pytest.raises(service.TaskValidationError, match="^invalid task data$"):
         await service.create_task(
             session,
             TaskCreate(contact_id=999999, title="Ghost task", type=TaskType.CALL, owner="Sam"),
@@ -67,16 +67,42 @@ async def test_create_task_rejects_an_invalid_contact_id(session: AsyncSession) 
 async def test_create_task_rejects_a_blank_title(session: AsyncSession) -> None:
     contact = await _make_contact(session)
 
-    with pytest.raises(service.TaskValidationError):
+    with pytest.raises(service.TaskValidationError, match="^title cannot be empty$"):
         await service.create_task(
             session, TaskCreate(contact_id=contact.id, title="   ", type=TaskType.CALL, owner="Sam")
         )
 
 
+async def test_create_task_rejects_a_blank_owner(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+
+    with pytest.raises(service.TaskValidationError, match="^owner cannot be empty$"):
+        await service.create_task(
+            session, TaskCreate(contact_id=contact.id, title="Follow up", type=TaskType.CALL, owner="  ")
+        )
+
+
+async def test_create_task_trims_a_non_blank_description(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+
+    task = await service.create_task(
+        session,
+        TaskCreate(
+            contact_id=contact.id,
+            title="Follow up call",
+            type=TaskType.CALL,
+            owner="Sam",
+            description="  Client requested a callback  ",
+        ),
+    )
+
+    assert task.description == "Client requested a callback"
+
+
 async def test_create_task_rejects_an_invalid_opportunity_id(session: AsyncSession) -> None:
     contact = await _make_contact(session)
 
-    with pytest.raises(service.TaskValidationError):
+    with pytest.raises(service.TaskValidationError, match="^opportunity not found$"):
         await service.create_task(
             session,
             TaskCreate(
@@ -111,7 +137,7 @@ async def test_create_task_from_an_opportunity_overrides_a_mismatched_contact_id
 
 
 async def test_get_task_raises_for_a_missing_id(session: AsyncSession) -> None:
-    with pytest.raises(service.TaskNotFoundError):
+    with pytest.raises(service.TaskNotFoundError, match="^999999$"):
         await service.get_task(session, 999999)
 
 
@@ -179,18 +205,28 @@ async def test_list_activity_for_contact_returns_completed_tasks_most_recent_fir
     session: AsyncSession,
 ) -> None:
     contact = await _make_contact(session)
+    other_contact = await _make_contact(session, "Grace Hopper")
+    pending = await service.create_task(
+        session, TaskCreate(contact_id=contact.id, title="Pending", type=TaskType.CALL, owner="Sam")
+    )
     first_done = await service.create_task(
         session, TaskCreate(contact_id=contact.id, title="First", type=TaskType.CALL, owner="Sam")
     )
     second_done = await service.create_task(
         session, TaskCreate(contact_id=contact.id, title="Second", type=TaskType.CALL, owner="Sam")
     )
+    other_done = await service.create_task(
+        session,
+        TaskCreate(contact_id=other_contact.id, title="Other", type=TaskType.CALL, owner="Sam"),
+    )
     await service.complete_task(session, first_done.id)
     await service.complete_task(session, second_done.id)
+    await service.complete_task(session, other_done.id)
 
     activity = await service.list_activity_for_contact(session, contact.id)
 
     assert [task.id for task in activity] == [second_done.id, first_done.id]
+    assert pending.id not in [task.id for task in activity]
 
 
 async def test_complete_task_sets_completed_at(session: AsyncSession) -> None:
@@ -204,3 +240,4 @@ async def test_complete_task_sets_completed_at(session: AsyncSession) -> None:
     completed = await service.complete_task(session, task.id)
 
     assert completed.completed_at is not None
+    assert completed.completed_at.tzinfo is not None

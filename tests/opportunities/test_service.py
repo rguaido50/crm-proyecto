@@ -93,8 +93,7 @@ async def test_list_for_contact_returns_all_statuses(session: AsyncSession) -> N
 
     opportunities = await service.list_for_contact(session, contact.id)
 
-    ids = {opp.id for opp in opportunities}
-    assert ids == {open_deal.id, closed_deal.id}
+    assert [opp.id for opp in opportunities] == [open_deal.id, closed_deal.id]
 
 
 async def test_update_opportunity_sets_closed_at_and_keeps_stage_when_status_leaves_open(
@@ -177,6 +176,19 @@ async def test_update_opportunity_rejects_a_blank_owner(session: AsyncSession) -
         await service.update_opportunity(session, opportunity.id, OpportunityUpdate(owner="  "))
 
 
+async def test_update_opportunity_trims_the_owner_field(session: AsyncSession) -> None:
+    contact = await _make_contact(session)
+    opportunity = await service.create_opportunity(
+        session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
+    )
+
+    updated = await service.update_opportunity(
+        session, opportunity.id, OpportunityUpdate(owner="  Alex  ")
+    )
+
+    assert updated.owner == "Alex"
+
+
 async def test_create_opportunity_rejects_a_value_usd_that_overflows_the_column(
     session: AsyncSession,
 ) -> None:
@@ -202,7 +214,7 @@ async def test_update_opportunity_rejects_a_value_usd_that_overflows_the_column(
         session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
     )
 
-    with pytest.raises(service.OpportunityValidationError):
+    with pytest.raises(service.OpportunityValidationError, match="^invalid opportunity data$"):
         await service.update_opportunity(
             session, opportunity.id, OpportunityUpdate(value_usd=Decimal(99999999999999))
         )
