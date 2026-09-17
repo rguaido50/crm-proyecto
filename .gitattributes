@@ -1,1 +1,2 @@
 src/crm/static/** -text
+*.sh text eol=lf

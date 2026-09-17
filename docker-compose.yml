@@ -1,17 +1,49 @@
 services:
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # docker/entrypoint.sh composes DATABASE_URL from these at container
+      # startup (with proper percent-encoding) — the app always reaches
+      # Postgres through the db service's hostname, which is always `db`
+      # inside the Compose network, never something the operator needs to
+      # get right by hand. Same credentials as the db service below, so
+      # there's exactly one place to set them.
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
+    ports:
+      - "80:8000"
+
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: crm
-      POSTGRES_PASSWORD: crm
-      POSTGRES_DB: crm
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm} -d ${POSTGRES_DB:-crm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     ports:
       - "5432:5432"
     volumes:
       - crm_db_data:/var/lib/postgresql/data
 
+  # Dev-only test database. Excluded from a plain `docker compose up -d` (the
+  # production deploy command) by its profile, but still reachable locally by
+  # naming it explicitly: `docker compose up -d db db-test`.
   db-test:
     image: postgres:17-alpine
+    profiles: ["test"]
     environment:
       POSTGRES_USER: crm
       POSTGRES_PASSWORD: crm
