@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Home</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-auto">
+    <div class="card p-3" style="min-width: 220px;">
+      <div class="text-muted small text-uppercase">Open pipeline</div>
+      <div class="fs-3">{{ open_total|currency }}</div>
+      <div class="text-muted small">{{ open_count }} open opportunit{{ "y" if open_count == 1 else "ies" }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="card p-3" style="min-width: 220px;">
+      <div class="text-muted small text-uppercase">Win rate (last 3 months)</div>
+      <div class="fs-3">{% if win_rate is not none %}{{ win_rate }}%{% else %}—{% endif %}</div>
+    </div>
+  </div>
+</div>
+
+<h2 class="h5">Upcoming tasks</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Contact</th>
+      <th>Title</th>
+      <th>Due date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in upcoming_tasks %}
+    <tr>
+      <td>{{ task.contact.name }}</td>
+      <td>{{ task.title }}</td>
+      <td>{{ task.due_date or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="text-muted">No pending tasks.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

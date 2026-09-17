@@ -15,6 +15,7 @@ from crm.core.errors import (
     ValidationError,
 )
 from crm.core.responses import redirect_with_error
+from crm.home.views import router as home_views_router
 from crm.opportunities.router import router as opportunities_api_router
 from crm.opportunities.views import router as opportunities_views_router
 from crm.reports.router import router as reports_api_router
@@ -27,6 +28,7 @@ BASE_DIR = Path(__file__).parent
 app = FastAPI(title="itela CRM")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
+app.include_router(home_views_router)
 app.include_router(contacts_api_router)
 app.include_router(contacts_views_router)
 app.include_router(opportunities_api_router)
