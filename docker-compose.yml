@@ -15,7 +15,7 @@ services:
       # db service below so there's exactly one place to set them.
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-crm}:${POSTGRES_PASSWORD:-crm}@db:5432/${POSTGRES_DB:-crm}
     ports:
-      - "80:80"
+      - "80:8000"
 
   db:
     image: postgres:17-alpine

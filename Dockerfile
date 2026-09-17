@@ -13,4 +13,8 @@ RUN uv sync --frozen --no-dev
 ENV PATH="/app/.venv/bin:$PATH"
 
 RUN chmod +x docker/entrypoint.sh
+
+RUN groupadd -r app && useradd -r -g app app && chown -R app:app /app
+USER app
+
 ENTRYPOINT ["docker/entrypoint.sh"]
