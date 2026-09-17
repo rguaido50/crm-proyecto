@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Reports</h1>
+
+<div class="d-flex flex-column gap-5">
+  <div>
+    <h2 class="h5">Pipeline by stage</h2>
+    <canvas id="pipeline-chart" height="100"></canvas>
+  </div>
+  <div>
+    <h2 class="h5">Won / lost by month</h2>
+    <canvas id="won-lost-chart" height="100"></canvas>
+  </div>
+  <div>
+    <h2 class="h5">
+      Conversion funnel
+      <span class="text-muted fs-6">win rate: <span id="win-rate">—</span></span>
+    </h2>
+    <canvas id="funnel-chart" height="100"></canvas>
+  </div>
+</div>
+
+<script src="{{ url_for('static', path='chartjs/chart.umd.min.js') }}"></script>
+<script>
+(async function () {
+  const STAGE_LABELS = {
+    new: "New", qualified: "Qualified", poc: "PoC", proposal: "Proposal", negotiation: "Negotiation",
+  };
+
+  const pipeline = await (await fetch("/api/reports/pipeline")).json();
+  const stages = Object.keys(pipeline);
+  new Chart(document.getElementById("pipeline-chart"), {
+    type: "bar",
+    data: {
+      labels: stages.map((s) => STAGE_LABELS[s] || s),
+      datasets: [{ label: "Pipeline value (USD)", data: stages.map((s) => pipeline[s].total) }],
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => {
+              const stage = pipeline[stages[ctx.dataIndex]];
+              return `${stage.count} deal(s), ${stage.unvalued_count} unvalued`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const wonLost = await (await fetch("/api/reports/won-lost")).json();
+  new Chart(document.getElementById("won-lost-chart"), {
+    type: "bar",
+    data: {
+      labels: wonLost.map((m) => m.label),
+      datasets: [
+        { label: "Won", data: wonLost.map((m) => m.won_total) },
+        { label: "Lost", data: wonLost.map((m) => m.lost_total) },
+      ],
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => {
+              const month = wonLost[ctx.dataIndex];
+              const count = ctx.dataset.label === "Won" ? month.won_count : month.lost_count;
+              return `${count} deal(s)`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const funnel = await (await fetch("/api/reports/funnel")).json();
+  document.getElementById("win-rate").textContent =
+    funnel.win_rate === null ? "—" : `${funnel.win_rate}%`;
+  new Chart(document.getElementById("funnel-chart"), {
+    type: "bar",
+    data: {
+      labels: funnel.stages.map((s) => STAGE_LABELS[s.stage] || s.stage),
+      datasets: [{ label: "Reached stage (%)", data: funnel.stages.map((s) => s.percentage) }],
+    },
+    options: {
+      indexAxis: "y",
+      plugins: {
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => `${funnel.stages[ctx.dataIndex].count} deal(s)`,
+          },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endblock %}
