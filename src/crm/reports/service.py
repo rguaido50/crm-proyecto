@@ -4,6 +4,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crm.core.dates import default_today, shift_month
 from crm.opportunities.models import Opportunity, OpportunityStage, OpportunityStatus
 from crm.reports.schemas import FunnelReport, FunnelStage, MonthlyWonLost, PipelineStageReport
 
@@ -11,18 +12,9 @@ _STAGE_ORDER = list(OpportunityStage)
 _CLOSED_STATUSES = (OpportunityStatus.WON, OpportunityStatus.LOST)
 
 
-def _default_today() -> date:
-    return datetime.now(UTC).date()
-
-
-def _shift_month(d: date, delta: int) -> date:
-    month_index = d.month - 1 + delta
-    return date(d.year + month_index // 12, month_index % 12 + 1, 1)
-
-
 def _three_month_window(today: date) -> tuple[datetime, datetime, list[date]]:
-    month_starts = [_shift_month(today, delta) for delta in (-2, -1, 0)]
-    window_end_date = _shift_month(today, 1)
+    month_starts = [shift_month(today, delta) for delta in (-2, -1, 0)]
+    window_end_date = shift_month(today, 1)
     window_start = datetime.combine(month_starts[0], datetime.min.time(), tzinfo=UTC)
     window_end = datetime.combine(window_end_date, datetime.min.time(), tzinfo=UTC)
     return window_start, window_end, month_starts
@@ -81,7 +73,7 @@ async def _closed_deals_in_window(
 async def won_lost_by_month(
     session: AsyncSession, today: date | None = None
 ) -> list[MonthlyWonLost]:
-    today = today or _default_today()
+    today = today or default_today()
     _, _, month_starts = _three_month_window(today)
     rows = await _closed_deals_in_window(session, today)
 
@@ -114,7 +106,7 @@ async def won_lost_by_month(
 
 
 async def conversion_funnel(session: AsyncSession, today: date | None = None) -> FunnelReport:
-    today = today or _default_today()
+    today = today or default_today()
     rows = await _closed_deals_in_window(session, today)
 
     total = len(rows)
