@@ -9,11 +9,15 @@ services:
       - path: .env
         required: false
     environment:
-      # The app reaches Postgres through the db service's hostname, which is
-      # always `db` inside the Compose network — never something the operator
-      # needs to get right by hand. Composed from the same credentials as the
-      # db service below so there's exactly one place to set them.
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-crm}:${POSTGRES_PASSWORD:-crm}@db:5432/${POSTGRES_DB:-crm}
+      # docker/entrypoint.sh composes DATABASE_URL from these at container
+      # startup (with proper percent-encoding) — the app always reaches
+      # Postgres through the db service's hostname, which is always `db`
+      # inside the Compose network, never something the operator needs to
+      # get right by hand. Same credentials as the db service below, so
+      # there's exactly one place to set them.
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
     ports:
       - "80:8000"
 

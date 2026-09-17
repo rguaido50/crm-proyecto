@@ -15,7 +15,10 @@ from crm.tasks import models as tasks_models  # noqa: F401
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# set_main_option stores this via ConfigParser, which treats a bare % as the
+# start of its own %(name)s interpolation syntax — escape any % from a
+# percent-encoded URL (e.g. a password with special characters) as %%.
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
