@@ -43,3 +43,15 @@ Tests run against a real PostgreSQL (the `db-test` service on port 55432), never
 Branch and PR per module, CI green before merge. Commits show the red→green cycle rather than collapsing a module into one commit.
 
 Specs and decisions live in GitHub issues, not in files.
+
+<!-- antislop:start -->
+## antislop
+For UI, copy, people, mobile layout, or code comments work, invoke the antislop plugin skills (core filter first, then the one for the task):
+- Core filter: `antislop:antislop`
+- UI / visual: `antislop:antislop-ui`
+- Copy & text: `antislop:antislop-copywriting`
+- People: `antislop:antislop-human`
+- Mobile / responsive: `antislop:antislop-layoutmobile`
+- Code comments: `antislop:antislop-code`
+Before starting, ask the user when antislop applies: during the work, or after it is done.
+<!-- antislop:end -->
