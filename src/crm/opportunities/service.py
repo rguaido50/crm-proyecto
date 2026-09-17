@@ -67,6 +67,12 @@ async def update_opportunity(
     session: AsyncSession, opportunity_id: int, data: OpportunityUpdate
 ) -> Opportunity:
     opportunity = await get_opportunity(session, opportunity_id)
+    return await apply_opportunity_update(session, opportunity, data)
+
+
+async def apply_opportunity_update(
+    session: AsyncSession, opportunity: Opportunity, data: OpportunityUpdate
+) -> Opportunity:
     updates = data.model_dump(exclude_unset=True)
     if "title" in updates:
         updates["title"] = require_non_blank(updates["title"], "title", OpportunityValidationError)

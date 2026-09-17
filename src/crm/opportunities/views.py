@@ -64,12 +64,13 @@ async def update_opportunity_form(
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
     try:
-        contact_id = (await service.get_opportunity(session, opportunity_id)).contact_id
+        opportunity = await service.get_opportunity(session, opportunity_id)
     except NotFoundError:
         return redirect_with_error("/pipeline", "Opportunity not found")
+    contact_id = opportunity.contact_id
     error = None
     try:
-        await service.update_opportunity(session, opportunity_id, data)
+        await service.apply_opportunity_update(session, opportunity, data)
     except ValidationError as exc:
         error = str(exc)
     return redirect_with_error(f"/contacts/{contact_id}", error)
