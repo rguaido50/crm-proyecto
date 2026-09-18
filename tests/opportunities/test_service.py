@@ -227,7 +227,7 @@ async def test_create_opportunity_rejects_a_negative_value_usd(session: AsyncSes
         await service.create_opportunity(
             session,
             OpportunityCreate(
-                contact_id=contact.id, title="Deal", owner="Sam", value_usd=Decimal("-1")
+                contact_id=contact.id, title="Deal", owner="Sam", value_usd=Decimal(-1)
             ),
         )
 
@@ -240,5 +240,5 @@ async def test_update_opportunity_rejects_a_negative_value_usd(session: AsyncSes
 
     with pytest.raises(service.OpportunityValidationError):
         await service.update_opportunity(
-            session, opportunity.id, OpportunityUpdate(value_usd=Decimal("-1"))
+            session, opportunity.id, OpportunityUpdate(value_usd=Decimal(-1))
         )
