@@ -74,6 +74,15 @@ async def test_seed_creates_twelve_tasks(session: AsyncSession) -> None:
     assert len(tasks) == 12
 
 
+async def test_seed_run_twice_does_not_duplicate_data(session: AsyncSession) -> None:
+    await seed(session, today=FIXED_TODAY)
+    await seed(session, today=FIXED_TODAY)
+
+    contacts = await contacts_service.list_contacts(session)
+
+    assert len(contacts) == 20
+
+
 async def test_seed_run_early_in_the_month_keeps_current_month_deals_in_that_bucket(
     session: AsyncSession,
 ) -> None:
