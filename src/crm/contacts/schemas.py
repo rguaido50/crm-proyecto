@@ -1,18 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ContactCreate(BaseModel):
-    name: str
-    company: str | None = None
+    name: str = Field(max_length=200)
+    company: str | None = Field(default=None, max_length=200)
     email: str | None = None
     phone: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class ContactUpdate(ContactCreate):
-    name: str | None = None  # type: ignore[assignment]
+    name: str | None = Field(default=None, max_length=200)  # type: ignore[assignment]
 
 
 class ContactRead(BaseModel):

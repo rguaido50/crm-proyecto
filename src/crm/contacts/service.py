@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from crm.contacts.models import Contact
 from crm.contacts.schemas import ContactCreate, ContactUpdate
 from crm.core.errors import HasDependentsError, NotFoundError, ValidationError
-from crm.core.validation import require_non_blank
+from crm.core.validation import require_non_blank, require_valid_email
 
 # Opportunity belongs to Contact (FK); this reverse import is deliberate — list_contacts
 # needs the open-Opportunity count per #12's ticket, and there's no repository layer to
@@ -32,6 +32,10 @@ def _normalize(data: dict[str, str | None]) -> dict[str, str | None]:
     if "name" in normalized:
         normalized["name"] = require_non_blank(
             normalized["name"] or "", "name", ContactValidationError
+        )
+    if "email" in normalized:
+        normalized["email"] = require_valid_email(
+            normalized["email"], "email", ContactValidationError
         )
     return normalized
 

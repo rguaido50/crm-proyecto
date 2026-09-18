@@ -28,9 +28,12 @@ async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> 
     session.add(opportunity)
     try:
         await session.commit()
-    except (IntegrityError, DataError) as exc:
+    except IntegrityError as exc:
         await session.rollback()
         raise OpportunityValidationError("invalid opportunity data") from exc
+    except DataError as exc:
+        await session.rollback()
+        raise OpportunityValidationError("value_usd is too large") from exc
     await session.refresh(opportunity)
     return opportunity
 
@@ -97,8 +100,11 @@ async def apply_opportunity_update(
         setattr(opportunity, field, value)
     try:
         await session.commit()
-    except (IntegrityError, DataError) as exc:
+    except IntegrityError as exc:
         await session.rollback()
         raise OpportunityValidationError("invalid opportunity data") from exc
+    except DataError as exc:
+        await session.rollback()
+        raise OpportunityValidationError("value_usd is too large") from exc
     await session.refresh(opportunity)
     return opportunity
