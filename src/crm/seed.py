@@ -1,14 +1,20 @@
-"""Demo seed data. Single deliberate run: `python -m crm.seed`.
+"""Demo seed data: `python -m crm.seed`.
 
 Reproduces the shape approved in issue #4 (prototypes/demo-seed-data.html on
 branch prototype/demo-seed-data), with dates computed relative to `today` so
 the fixed three-month report window is always populated.
+
+Idempotent: clears contacts/opportunities/tasks before inserting, so it's
+always safe to rerun as a reset. The TRUNCATE takes an exclusive lock on
+those tables until the reseed commits, so don't run this against an
+instance mid-demo.
 """
 
 import asyncio
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crm.contacts import service as contacts_service
@@ -157,6 +163,8 @@ def _deal_title(proto_id: int, company: str | None) -> str:
 
 async def seed(session: AsyncSession, today: date | None = None) -> None:
     today = today or default_today()
+
+    await session.execute(text("TRUNCATE tasks, opportunities, contacts RESTART IDENTITY CASCADE"))
 
     contacts = [
         await contacts_service.create_contact(session, ContactCreate(name=name, company=company))
