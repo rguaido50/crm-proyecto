@@ -79,8 +79,12 @@ async def test_seed_run_twice_does_not_duplicate_data(session: AsyncSession) -> 
     await seed(session, today=FIXED_TODAY)
 
     contacts = await contacts_service.list_contacts(session)
+    opportunities = await opportunities_service.list_open_by_stage(session)
+    tasks = await tasks_service.list_tasks(session)
 
     assert len(contacts) == 20
+    assert sum(len(opps) for opps in opportunities.values()) == 16
+    assert len(tasks) == 12
 
 
 async def test_seed_run_early_in_the_month_keeps_current_month_deals_in_that_bucket(

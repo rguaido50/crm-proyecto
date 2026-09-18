@@ -5,7 +5,9 @@ branch prototype/demo-seed-data), with dates computed relative to `today` so
 the fixed three-month report window is always populated.
 
 Idempotent: clears contacts/opportunities/tasks before inserting, so it's
-always safe to rerun as a reset.
+always safe to rerun as a reset. The TRUNCATE takes an exclusive lock on
+those tables until the reseed commits, so don't run this against an
+instance mid-demo.
 """
 
 import asyncio
