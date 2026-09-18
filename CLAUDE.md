@@ -19,6 +19,8 @@ Runtime dependencies are pinned to exact versions and `uv.lock` is committed. Fr
 ```
 uv sync
 uv run pytest
+uv run playwright install chromium
+E2E_BASE_URL=http://<host>:<port> uv run pytest tests/e2e -m e2e
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
 uv run alembic upgrade head
@@ -34,9 +36,11 @@ Service functions take `AsyncSession` as their first argument and use it directl
 
 ## Testing
 
-Test first. Tests cover services, API endpoints and report calculations; every view gets one thin test asserting 200 and the expected content in the HTML. Chart rendering is checked by eye.
+Test first. Tests cover services, API endpoints and report calculations; every view gets one thin test asserting 200 and the expected content in the HTML.
 
 Tests run against a real PostgreSQL (the `db-test` service on port 55432), never SQLite — each test inside a transaction that rolls back.
+
+`tests/e2e/` holds Playwright browser tests against a running app (marker `e2e`, excluded from the default `uv run pytest` run — see Commands). They cover chart rendering and full HTTP/HTMX flows the transaction-rollback suite can't reach, since the app under test runs in its own process. Each test creates and owns its own data rather than mutating seed data; tasks can't be deleted (`contacts.tasks` FK is `ON DELETE RESTRICT`), so the task-completion test leaves its throwaway contact behind for the next `python -m crm.seed` reset.
 
 ## Workflow
 

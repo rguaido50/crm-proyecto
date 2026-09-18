@@ -27,12 +27,16 @@ dev = [
     "ruff>=0.7",
     "mypy>=1.11",
     "mutmut>=3.8",
+    "pytest-playwright>=0.5",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--import-mode=importlib"
+addopts = '--import-mode=importlib -m "not e2e"'
+markers = [
+    "e2e: browser end-to-end test against a running app (see CLAUDE.md commands)",
+]
 
 [tool.ruff]
 line-length = 100
