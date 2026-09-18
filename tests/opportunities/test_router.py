@@ -36,6 +36,32 @@ async def test_update_opportunity_to_lost_returns_closed_at_populated(
     assert response.json()["closed_at"] is not None
 
 
+async def test_create_opportunity_rejects_a_title_over_the_length_limit(
+    client: AsyncClient,
+) -> None:
+    contact = await client.post("/api/contacts", json={"name": "Ada Lovelace"})
+
+    response = await client.post(
+        "/api/opportunities",
+        json={"contact_id": contact.json()["id"], "title": "x" * 201, "owner": "Sam"},
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_opportunity_rejects_an_owner_over_the_length_limit(
+    client: AsyncClient,
+) -> None:
+    contact = await client.post("/api/contacts", json={"name": "Ada Lovelace"})
+
+    response = await client.post(
+        "/api/opportunities",
+        json={"contact_id": contact.json()["id"], "title": "Deal", "owner": "x" * 101},
+    )
+
+    assert response.status_code == 422
+
+
 async def test_list_open_by_stage_includes_a_known_stage_key(client: AsyncClient) -> None:
     response = await client.get("/api/opportunities")
 

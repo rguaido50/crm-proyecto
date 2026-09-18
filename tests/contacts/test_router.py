@@ -34,6 +34,64 @@ async def test_update_contact_rejects_an_explicit_null_name(client: AsyncClient)
     assert response.status_code == 422
 
 
+async def test_create_contact_rejects_an_invalid_email(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "email": "not-an-email"}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_update_contact_rejects_an_invalid_email(client: AsyncClient) -> None:
+    created = await client.post("/api/contacts", json={"name": "Ada Lovelace"})
+
+    response = await client.patch(
+        f"/api/contacts/{created.json()['id']}", json={"email": "not-an-email"}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_a_name_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post("/api/contacts", json={"name": "x" * 201})
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_a_company_over_the_length_limit(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "company": "x" * 201}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_notes_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "notes": "x" * 2001}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_an_email_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "email": f"{'x' * 250}@example.com"}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_a_phone_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "phone": "1" * 31}
+    )
+
+    assert response.status_code == 422
+
+
 async def test_delete_contact_returns_409_when_it_has_opportunities(
     client: AsyncClient, session: AsyncSession
 ) -> None:
