@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 class ContactCreate(BaseModel):
     name: str = Field(max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    email: str | None = None
-    phone: str | None = None
+    email: str | None = Field(default=None, max_length=254)
+    phone: str | None = Field(default=None, max_length=30)
     notes: str | None = Field(default=None, max_length=2000)
 
 

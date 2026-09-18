@@ -32,6 +32,9 @@ async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> 
         await session.rollback()
         raise OpportunityValidationError("invalid opportunity data") from exc
     except DataError as exc:
+        # ponytail: value_usd is the only Numeric column on this model, so any
+        # DataError here is its precision overflowing. Revisit this message if
+        # a second bounded-precision column is ever added.
         await session.rollback()
         raise OpportunityValidationError("value_usd is too large") from exc
     await session.refresh(opportunity)

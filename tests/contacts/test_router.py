@@ -76,6 +76,22 @@ async def test_create_contact_rejects_notes_over_the_length_limit(client: AsyncC
     assert response.status_code == 422
 
 
+async def test_create_contact_rejects_an_email_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "email": f"{'x' * 250}@example.com"}
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_contact_rejects_a_phone_over_the_length_limit(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/contacts", json={"name": "Ada Lovelace", "phone": "1" * 31}
+    )
+
+    assert response.status_code == 422
+
+
 async def test_delete_contact_returns_409_when_it_has_opportunities(
     client: AsyncClient, session: AsyncSession
 ) -> None:
