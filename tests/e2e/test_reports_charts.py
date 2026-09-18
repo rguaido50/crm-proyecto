@@ -9,7 +9,7 @@ API_PATHS = ("/api/reports/pipeline", "/api/reports/won-lost", "/api/reports/fun
 
 def test_reports_page_renders_all_charts(page: Page) -> None:
     responses = []
-    page.on("response", responses.append)
+    page.on("response", lambda response: responses.append(response))
 
     page.goto("/reports")
     page.wait_for_load_state("networkidle")
