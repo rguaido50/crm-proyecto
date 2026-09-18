@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from crm.core.errors import NotFoundError, ValidationError
-from crm.core.validation import require_non_blank
+from crm.core.validation import require_non_blank, require_non_negative
 from crm.opportunities.models import Opportunity, OpportunityStage, OpportunityStatus
 from crm.opportunities.schemas import OpportunityCreate, OpportunityUpdate
 
@@ -21,6 +21,9 @@ async def create_opportunity(session: AsyncSession, data: OpportunityCreate) -> 
     fields = data.model_dump()
     fields["title"] = require_non_blank(fields["title"], "title", OpportunityValidationError)
     fields["owner"] = require_non_blank(fields["owner"], "owner", OpportunityValidationError)
+    fields["value_usd"] = require_non_negative(
+        fields["value_usd"], "value_usd", OpportunityValidationError
+    )
     opportunity = Opportunity(**fields)
     session.add(opportunity)
     try:
@@ -78,6 +81,10 @@ async def apply_opportunity_update(
         updates["title"] = require_non_blank(updates["title"], "title", OpportunityValidationError)
     if "owner" in updates:
         updates["owner"] = require_non_blank(updates["owner"], "owner", OpportunityValidationError)
+    if "value_usd" in updates:
+        updates["value_usd"] = require_non_negative(
+            updates["value_usd"], "value_usd", OpportunityValidationError
+        )
 
     new_status = updates.get("status")
     if new_status is not None and new_status != opportunity.status:
