@@ -194,7 +194,7 @@ async def test_create_opportunity_rejects_a_value_usd_that_overflows_the_column(
 ) -> None:
     contact = await _make_contact(session)
 
-    with pytest.raises(service.OpportunityValidationError):
+    with pytest.raises(service.OpportunityValidationError, match="^value_usd is too large$"):
         await service.create_opportunity(
             session,
             OpportunityCreate(
@@ -214,7 +214,7 @@ async def test_update_opportunity_rejects_a_value_usd_that_overflows_the_column(
         session, OpportunityCreate(contact_id=contact.id, title="Deal", owner="Sam")
     )
 
-    with pytest.raises(service.OpportunityValidationError, match="^invalid opportunity data$"):
+    with pytest.raises(service.OpportunityValidationError, match="^value_usd is too large$"):
         await service.update_opportunity(
             session, opportunity.id, OpportunityUpdate(value_usd=Decimal(99999999999999))
         )
